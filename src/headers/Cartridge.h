@@ -12,19 +12,24 @@ using namespace std;
 #define CART_HEADER_SIZE 16
 #define PRG_INDEX 4
 #define CHR_INDEX 5
+#define NES_NAME_INDEX 4
 
 class Cartridge
 {
 public:
 	Cartridge(string);
-	void readHeader();
-	int getSizeOfPRG();
+	~Cartridge();
+	bool read_header();
+	int get_size_of_PRG_16KB();
 	int getSizeOfCHR();
 	int getSizeOfPRGram();
+	int get_size_of_PRG_8KB();
 protected:
 private:
-	ifstream rom;
-	unsigned char *header; // cartridge header
+	ifstream rom; // stream for the ROM
+	char *header; // cartridge header
+
+	bool validate_header();
 };
 
 #endif
