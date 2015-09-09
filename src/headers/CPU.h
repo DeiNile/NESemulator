@@ -3,23 +3,35 @@
 #ifndef CPU:H
 #define CPU:H
 
+#define MEM_SIZE 65536
+#define MAX_BYTE_VAL 256
+#define MAX_VALUE 0xFF
+#define BYTE_LENGTH 8
 
 class CPU
 {
 public:
+	enum addressing_mode_t {
+			NONE,
+			ABSOLUTE,
+			ABSOLUTE_X,
+			ABSOLUTE_Y,
+			ACCUMULATOR,
+			IMMEDIATE,
+			IMPLIED,
+			INDEXED_INDIRECT,
+			INDIRECT,
+			INDIRECT_INDEXED,
+			RELATIVE,
+			ZERO_PAGE,
+			ZERO_PAGE_X,
+			ZERO_PAGE_Y
+		};
+
 	CPU();
-	inline int read_PC();
-	inline int read_SP();
-	inline int read_PS();
-	inline int read_A();
-	inline int read_X();
-	inline int read_Y();
-	inline int write_PC(int);
-	inline int write_SP(int);
-	inline int write_PS(int);
-	inline int write_A(int);
-	inline int write_X(int);
-	inline int write_Y(int);
+
+	static inline int read_memory(int);
+	static inline void write_memory(int, int);
 
 	// Load and store
 	void lda(int); 	// Load A with value at memory location
@@ -42,7 +54,7 @@ public:
 	void dey(); 	// Decrement Y
 
 	// Logical
-	int AND(int); 	// AND value at memory location with A
+	int _and(int); 	// AND value at memory location with A
 	int ora(int); 	// OR value at memory location with A
 	int eor(int); 	// XOR value at memory location with A
 
@@ -98,15 +110,17 @@ public:
 	void nop(); 	// No operation
 	void brk(); 	// Break
 
+	// Utils
+	unsigned int switch_operand(int);
 protected:
 private:
 	// Registers
 	int pc; // Program counter, 16 bit
-	int sp; // Stack pointer, 8 bit
+	int sp; // Stack pointer, 8 bit, offset from 0x0100
 	int ps; // processor status / status register, 8 bit
-	int A; // accumulator, 8 bit
-	int X; // index register, 8 bit
-	int Y; // index register, 8 bit
+	int A;  // accumulator, 8 bit
+	int X;  // index register, 8 bit
+	int Y;  // index register, 8 bit
 
 	bool C_flag;
 	bool Z_flag;
@@ -118,6 +132,66 @@ private:
 
 	int opcode;
 	int clock_cycle;
+	int memory[MEM_SIZE];
+
+	// Length of an instruction in bytes
+	const unsigned char[MAX_BYTE_VAL] instruction_length {
+		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0,
+		2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	};
+
+	// How long each instruction takes to execute
+	const unsigned char[MAX_BYTE_VAL] execution_time {
+		7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+		2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
+		2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+		2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
+		2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	};
+
+	const unsigned char[MAX_BYTE_VAL] opcode_addressing_mode {
+		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 8, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	};
 };
 
 #endif
