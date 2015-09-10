@@ -5,7 +5,10 @@
 
 #define MEM_SIZE 65536
 #define MAX_BYTE_VAL 256
+#define MAX_SIGNED_BYTE_VAL 127
+#define MIN_SIGNED_BYTE_VAL -127
 #define ZERO_PAGE_WRAPAROUND 0xFF
+#define BIT_8 0x80
 #define BYTE_LENGTH 8
 
 class CPU
@@ -54,9 +57,9 @@ public:
 	void dey(); 	// Decrement Y
 
 	// Logical
-	int _and(int); 	// AND value at memory location with A
-	int ora(int); 	// OR value at memory location with A
-	int eor(int); 	// XOR value at memory location with A
+	void _and(int); // AND value at memory location with A
+	void ora(int); 	// OR value at memory location with A
+	void eor(int); 	// XOR value at memory location with A
 
 	// Jump, branch, compare and test
 	void jmp(int);  // Jump to address
@@ -111,17 +114,19 @@ public:
 	void brk(); 	// Break
 
 	// Utils
-	unsigned int switch_operand(int);
+	void set_Z_flag(int);
+	void set_N_flag(int);
 protected:
 private:
 	// Registers
-	int pc; // Program counter, 16 bit
-	int sp; // Stack pointer, 8 bit, offset from 0x0100
-	int ps; // processor status / status register, 8 bit
+	int PC; // Program counter, 16 bit
+	int SP; // Stack pointer, 8 bit, offset from 0x0100
+	int PS; // processor status / status register, 8 bit
 	int A;  // accumulator, 8 bit
 	int X;  // index register, 8 bit
 	int Y;  // index register, 8 bit
 
+	bool N_flag;
 	bool C_flag;
 	bool Z_flag;
 	bool I_flag;
