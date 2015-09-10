@@ -5,7 +5,7 @@
 
 #define MEM_SIZE 65536
 #define MAX_BYTE_VAL 256
-#define MAX_VALUE 0xFF
+#define ZERO_PAGE_WRAPAROUND 0xFF
 #define BYTE_LENGTH 8
 
 class CPU

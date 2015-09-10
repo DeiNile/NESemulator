@@ -78,42 +78,58 @@ int CPU::resolve_operand(int opcode, int operand)
 
 	switch(opcode) {
 		case ABSOLUTE:
-			ret = read_memory(address);
+			resolved_operand = read_memory(address);
 			break;
+
 		case ABSOLUTE_X:
-			ret = read_memory(address + X);
+			resolved_operand = read_memory(address + X);
 			break;
+
 		case ABSOLUTE_Y:
-			ret = read_memory(address + Y);
+			resolved_operand = read_memory(address + Y);
 			break;
+			
 		case ACCUMULATOR:
-			ret = A;
+			resolved_operand = A;
 			break;
+			
 		case IMMEDIATE:
-			ret = operand;
+			resolved_operand = operand;
 			break;
+			
 		case IMPLIED:
 			break;
 		case INDEXED_INDIRECT:
+			address = read_memory((operand + X) % ZERO_PAGE_WRAPAROUND);
+			resolved_operand = read_memory(address);
 			break;
+			
 		case INDIRECT:
-			ret = read_memory(address + 1);
-			ret <<= BYTE_LENGTH;
-			ret |= read_memory(address);
+			// Read most significant byte of address
+			resolved_operand = read_memory(address + 1); 
+			resolved_operand <<= BYTE_LENGTH;
+			// Read least significant byte of address
+			resolved_operand |= read_memory(address);
 			break;
+			
 		case INDIRECT_INDEXED:
+			resolved_operand = read_memory(operand + Y);
 			break;
+			
 		case RELATIVE:
-			ret = PC + 2 + relative_address; // ?????????????????
-			break;	
+			resolved_operand = PC + 2 + relative_address; // ?????????????????
+			break;
+				
 		case ZERO_PAGE:
-			ret = read_memory(operand);
+			resolved_operand = read_memory(operand);
 			break;
+			
 		case ZERO_PAGE_X:
-			ret = (X + read_memory(operand)) % MAX_VALUE;
+			resolved_operand = (X + read_memory(operand)) % ZERO_PAGE_WRAPAROUND;
 			break;
+			
 		case ZERO_PAGE_Y:
-			ret = (Y + read_memory(operand)) % MAX_VALUE;
+			resolved_operand = (Y + read_memory(operand)) % ZERO_PAGE_WRAPAROUND;
 			break;
 	}
 
