@@ -1,6 +1,72 @@
 #include "headers/CPU.h"
 
-static inline int read_memory(int address)
+using namespace std;
+
+CPU::CPU()
+{
+
+}
+
+int CPU::memory[MEM_SIZE];
+
+const unsigned char CPU::instruction_length[MAX_BYTE_VAL] = {
+		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0,
+		2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	};
+
+const unsigned char CPU::execution_time[MAX_BYTE_VAL] = {
+		7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+		2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
+		2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+		2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
+		2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+		2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	};
+
+const unsigned char CPU::opcode_addressing_mode[MAX_BYTE_VAL] = {
+		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 8, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	};
+
+inline int CPU::read_memory(int address)
 {
 	if (address >= 0 && address <= MEM_SIZE) {
 		return memory[address];
@@ -9,7 +75,7 @@ static inline int read_memory(int address)
 	}
 }
 
-static inline void write_memory(int address, int value)
+inline void CPU::write_memory(int address, int value)
 {
 	if (address >= 0 && address <= MEM_SIZE) {
 		memory[address] = value;
@@ -60,15 +126,15 @@ void CPU::adc(int value)
 {
 	int prev_A = A;
 	A = (A + value) % MAX_BYTE_VAL;
-	if (prev_A + value + (int)C >= MAX_BYTE_VAL) {
-		C = true;
+	if (prev_A + value + (int)C_flag >= MAX_BYTE_VAL) {
+		C_flag = true;
 	} else {
-		C = false;
+		C_flag = false;
 	}
-	if ((prev_A ^ value) & BIT_8 != 0 && (prev_A ^ A) & BIT_8 != 0) {
-		V = true;
+	if (((prev_A ^ value) & BIT_8) != 0 && ((prev_A ^ A) & BIT_8) != 0) {
+		V_flag = true;
 	} else {
-		V = false;
+		V_flag = false;
 	}
 	set_Z_flag(A);
 	set_N_flag(A);
@@ -77,16 +143,16 @@ void CPU::adc(int value)
 void CPU::sbc(int value) 
 {
 	int prev_A = A;
-	A = value - A - (1 - C);
-	if (value - prev_A - (1 - (int)C) >= 0) {
-		C = true;
+	A = value - A - (1 - C_flag);
+	if (value - prev_A - (1 - (int)C_flag) >= 0) {
+		C_flag = true;
 	} else {
-		C = false;
+		C_flag = false;
 	}
-	if ((prev_A ^ value) & BIT_8 != 0 && (prev_A ^ A) & BIT_8 != 0) {
-		V = true;
+	if (((prev_A ^ value) & BIT_8) != 0 && ((prev_A ^ A) & BIT_8) != 0) {
+		V_flag = true;
 	} else {
-		V = false;
+		V_flag = false;
 	}
 	set_Z_flag(A);
 	set_N_flag(A);
@@ -98,7 +164,7 @@ void CPU::sbc(int value)
 void CPU::inc(int address)
 {
 	int value = read_memory(address);
-	write_memory(++value);
+	write_memory(address, ++value);
 	set_Z_flag(value);
 	set_N_flag(value);
 }
@@ -120,7 +186,7 @@ void CPU::iny()
 void CPU::dec(int address)
 {
 	int value = read_memory(address);
-	write_memory(--value);
+	write_memory(address, --value);
 	set_Z_flag(value);
 	set_N_flag(value);
 }
@@ -215,37 +281,37 @@ void CPU::txs()
 
 void CPU::clc()
 {
-	C = false;
+	C_flag = false;
 }
 
 void CPU::cld()
 {
-	D = false;
+	D_flag = false;
 }
 
 void CPU::cli()
 {
-	I = false;
+	I_flag = false;
 }
 
 void CPU::clv()
 {
-	V = false;
+	V_flag = false;
 }
 
 void CPU::sec()
 {
-	C = true;
+	C_flag = true;
 }
 
 void CPU::sed()
 {
-	D = true;
+	D_flag = true;
 }
 
 void CPU::sei()
 {
-	I = true;
+	I_flag = true;
 }
 
 
@@ -255,14 +321,6 @@ void CPU::sei()
 
 
 
-int CPU::read_memory(int memoryLocation)
-{
-	if (memoryLocation >= 0 && memoryLocation <= MEM_SIZE) {
-		return memory[memoryLocation];
-	} else {
-		return 0;
-	}
-}
 
 int CPU::resolve_operand(int opcode, int operand)
 {
@@ -338,17 +396,17 @@ int CPU::resolve_operand(int opcode, int operand)
 void CPU::set_Z_flag(int value)
 {
 	if (value == 0) {
-		Z = true;
+		Z_flag = true;
 	} else {
-		Z == false;
+		Z_flag = false;
 	}
 }
 
 void CPU::set_N_flag(int value)
 {
-	if (value & BIT_8 == 0) {
-		N = false;
+	if ((value & BIT_8) == 0) {
+		N_flag = false;
 	} else {
-		N = true;
+		N_flag = true;
 	}
 }
