@@ -8,8 +8,14 @@
 #define MAX_SIGNED_BYTE_VAL 127
 #define MIN_SIGNED_BYTE_VAL -127
 #define ZERO_PAGE_WRAPAROUND 0xFF
-#define BIT_8 0x80
+#define STACK_POINTER_WRAPAROUND 0xFF
+#define BIT_8_MASK 0x80
 #define BYTE_LENGTH 8
+#define BIT_0_TO_7 7
+
+#define STACK_START 0x0100
+#define STACK_END 0x0200
+#define INTERRUPT_VECTOR 0xFFFE
 
 class CPU
 {
@@ -64,9 +70,9 @@ public:
 
 	// Jump, branch, compare and test
 	void jmp(int);  // Jump to address
-	bool cmp(int);  // Compare value at memory location with A
-	bool cpx(int);  // Compare value at memory location with X
-	bool cpy(int);  // Compare value at memory location with Y
+	void cmp(int);  // Compare value at memory location with A
+	void cpx(int);  // Compare value at memory location with X
+	void cpy(int);  // Compare value at memory location with Y
 	void bcc(int);  // Branch if C = 0
 	void bcs(int);  // Branch if C = 1
 	void beq(int);  // Branch if Z = 1
@@ -78,10 +84,10 @@ public:
 	void bit(int);  // Tests bits of value with A, sets flags only
 
 	// Shift and rotate
-	void asl(); 	// Shift A left 1 bit
-	void lsr(); 	// Shift A right 1 bit
-	void rol(); 	// Rotate A left 1 bit
-	void ror(); 	// Rotate A right 1 bit
+	void asl(int, bool); 	// Shift A left 1 bit
+	void lsr(int, bool); 	// Shift A right 1 bit
+	void rol(int, bool); 	// Rotate A left 1 bit
+	void ror(int, bool); 	// Rotate A right 1 bit
 
 	// Transfer
 	void tax(); 	// Move A to X
@@ -117,6 +123,8 @@ public:
 	// Utils
 	void set_Z_flag(int);
 	void set_N_flag(int);
+	void push(int);
+	int pull();
 
 protected:
 

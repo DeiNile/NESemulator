@@ -131,7 +131,7 @@ void CPU::adc(int value)
 	} else {
 		C_flag = false;
 	}
-	if (((prev_A ^ value) & BIT_8) != 0 && ((prev_A ^ A) & BIT_8) != 0) {
+	if (((prev_A ^ value) & BIT_8_MASK) != 0 && ((prev_A ^ A) & BIT_8_MASK) != 0) {
 		V_flag = true;
 	} else {
 		V_flag = false;
@@ -149,7 +149,7 @@ void CPU::sbc(int value)
 	} else {
 		C_flag = false;
 	}
-	if (((prev_A ^ value) & BIT_8) != 0 && ((prev_A ^ A) & BIT_8) != 0) {
+	if (((prev_A ^ value) & BIT_8_MASK) != 0 && ((prev_A ^ A) & BIT_8_MASK) != 0) {
 		V_flag = true;
 	} else {
 		V_flag = false;
@@ -229,7 +229,215 @@ void CPU::eor(int address)
 }
 
 // Jump, branch, compare and test
+
+// INDIRECT VECTOR SHOULD NOT BE AT PAGE END
+void CPU::jmp(int address)
+{
+	PC = address;
+}
+
+void CPU::cmp(int address)
+{
+	int val = A - read_memory(address);
+	if (val >= 0) {
+		C_flag = true;
+	}
+	set_Z_flag(val);
+	set_N_flag(val);
+}
+
+void CPU::cpx(int address) 
+{
+	int val = X - read_memory(address);
+	if (val >= 0) {
+		C_flag = true;
+	}
+	set_Z_flag(val);
+	set_N_flag(val);
+}
+
+void CPU::cpy(int address)
+{
+	int val = Y - read_memory(address);
+	if (val >= 0) {
+		C_flag = true;
+	}
+	set_Z_flag(val);
+	set_N_flag(val);
+}
+
+void CPU::bcc(int displacement)
+{
+	if (!C_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::bcs(int displacement)
+{
+	if (C_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::beq(int displacement) 
+{
+	if (Z_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::bne(int displacement)
+{
+	if (!Z_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::bmi(int displacement)
+{
+	if (N_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::bpl(int displacement)
+{
+	if (!N_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::bvs(int displacement) 
+{
+	if (!V_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::bvc(int displacement) 
+{
+	if (V_flag) {
+		PC += displacement;
+	}
+}
+
+void CPU::bit(int address)
+{
+	int mem_val = read_memory(address);
+	set_Z_flag(A & mem_val);
+	mem_val >>= 6;
+	V_flag = 1 & mem_val;
+	mem_val >>= 1;
+	N_flag = 1 & mem_val;
+}
+
 // Shift and rotate
+
+void CPU::asl(int address, bool read_from_memory)
+{
+	if (read_from_memory) {
+		int mem_val = read_memory(address);
+		if ((mem_val & BIT_8_MASK) == 0) {
+			C_flag = false;
+		} else {
+			C_flag = true;
+		}
+		mem_val <<= 1;
+		set_Z_flag(mem_val);
+		set_N_flag(mem_val);
+		write_memory(address, mem_val);
+
+	} else {
+		if ((A & BIT_8_MASK) == 0) {
+			C_flag = false;
+		} else {
+			C_flag = true;
+		}
+		A <<= 1;
+		set_Z_flag(A);
+		set_N_flag(A);
+	}
+}
+
+void CPU::lsr(int address, bool read_from_memory) 
+{
+	if (read_from_memory) {
+		int mem_val = read_memory(address);
+		if ((mem_val & 1) == 0) {
+			C_flag = false;
+		} else {
+			C_flag = true;
+		}
+		mem_val >>= 1;
+		set_Z_flag(mem_val);
+		set_N_flag(mem_val);
+		write_memory(address, mem_val);
+	} else {
+		if ((A & 1) == 0) {
+			C_flag = false;
+		} else {
+			C_flag = true;
+		}
+		A >>= 1;
+		set_Z_flag(A);
+		set_N_flag(A);
+	}
+}
+
+void CPU::rol(int address, bool read_from_memory)
+{
+	bool new_carry;
+	if (read_from_memory) {
+		int mem_val = read_memory(address);
+		if ((mem_val & BIT_8_MASK) == 0) {
+			new_carry = false;
+		} else {
+			new_carry = true;
+		}
+		mem_val <<= 1;
+		mem_val |= C_flag;
+		C_flag = new_carry;
+		set_Z_flag(mem_val);
+		set_N_flag(mem_val);
+		write_memory(address, mem_val);
+	} else {
+		if ((A & BIT_8_MASK) == 0) {
+			new_carry = false;
+		} else {
+			new_carry = true;
+		}
+		A <<= 1;
+		A |= C_flag;
+		C_flag = new_carry;
+		set_Z_flag(A);
+		set_N_flag(A);
+	}
+}
+
+void CPU::ror(int address, bool read_from_memory)
+{
+	bool new_carry;
+	int carry_in_bit_7 = C_flag << BIT_0_TO_7;
+	if (read_from_memory) {
+		int mem_val = read_memory(address);
+		new_carry = (mem_val & 1);
+		mem_val >>= 1;
+		mem_val |= carry_in_bit_7;
+		C_flag = new_carry;
+		set_Z_flag(mem_val);
+		set_N_flag(mem_val);
+		write_memory(address, mem_val);
+	} else {
+		new_carry = (A & 1);
+		A >>= 1;
+		A |= carry_in_bit_7;
+		C_flag = new_carry;
+		set_Z_flag(A);
+		set_N_flag(A);
+	}
+}
+
 // Transfer
 
 void CPU::tax()
@@ -276,6 +484,21 @@ void CPU::txs()
 	set_N_flag(SP);
 }
 
+void CPU::pha()
+{
+	push(A);
+}
+
+void CPU::php()
+{
+	push(PS);
+}
+
+void CPU::plp()
+{
+	PS = pull();
+}
+
 
 // Set and reset
 
@@ -318,7 +541,19 @@ void CPU::sei()
 
 // NOP and BRK
 
+void CPU::nop()
+{
+}
 
+void CPU::brk()
+{
+	B_flag = true;
+	push(PC);
+	push(PS);
+	PC = read_memory(INTERRUPT_VECTOR);
+	PC <<= BYTE_LENGTH;
+	PC |= read_memory(INTERRUPT_VECTOR + 1);
+}
 
 
 
@@ -404,9 +639,25 @@ void CPU::set_Z_flag(int value)
 
 void CPU::set_N_flag(int value)
 {
-	if ((value & BIT_8) == 0) {
+	if ((value & BIT_8_MASK) == 0) {
 		N_flag = false;
 	} else {
 		N_flag = true;
 	}
+}
+
+void CPU::push(int val)
+{
+	if (SP - 1 < 0) {
+		SP = 0;
+	}
+	memory[STACK_START + (SP--)] = val;
+}
+
+int CPU::pull()
+{
+	if (SP + 1 > STACK_POINTER_WRAPAROUND) {
+		SP = 0;
+	}
+	return memory[STACK_START + (SP++)];
 }
