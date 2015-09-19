@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <string>
 
 #ifndef CPU_H
 #define CPU_H
@@ -15,7 +16,10 @@
 
 #define STACK_START 0x0100
 #define STACK_END 0x0200
+
 #define INTERRUPT_VECTOR 0xFFFE
+
+using namespace std;
 
 class CPU
 {
@@ -39,9 +43,9 @@ public:
 
 	CPU();
 
-	static inline int read_memory(int);
-	static inline void write_memory(int, int);
-	int resolve_operand(int, int);
+	int read_memory(int); // Should be private and inline
+	void write_memory(int, int); // Should be private and inline
+	int resolve_operand(int, int); // should be private
 
 	// Load and store
 	void lda(int); 	// Load A with value at memory location
@@ -125,6 +129,22 @@ public:
 	void set_N_flag(int);
 	void push(int);
 	int pull();
+	void update_PS();
+	void print_state();
+	string hello_world();
+
+	// Functions to be used with unit tests
+	int get_PC();
+	int get_SP();
+	int get_PS();
+	bool is_N();
+	bool is_C();	
+	bool is_Z();
+	bool is_I();
+	bool is_D();
+	bool is_B();
+	bool is_V();
+	bool is_S();	
 
 protected:
 
@@ -146,7 +166,6 @@ private:
 	bool V_flag;
 	bool S_flag;
 
-	int opcode;
 	int clock_cycle;
 	static int memory[];
 

@@ -1,5 +1,6 @@
 OBJS = main.o Cartridge.o CPU.o
-#HEADERS = headers/Cartridge.h headers/CPU.h
+TEST_OBJS = CPU_test.o
+INCLUDE = -l boost_unit_test_framework
 SRC = Cartridge.cpp CPU.cpp
 CC = g++
 DEBUG = -g
@@ -17,6 +18,13 @@ CPU.o:	CPU.cpp
 
 Cartridge.o:	Cartridge.cpp
 	$(CC) $(CFLAGS) headers/Cartridge.h Cartridge.cpp
+
+CPU_test.o:	test/CPU_test.cpp
+	$(CC) $(CFLAGS) CPU.cpp test/CPU_test.cpp
+
+run_test:	CPU_test.o
+	$(CC) -o unit_test $(LFLAGS) $(INCLUDE) CPU.cpp test/CPU_test.cpp
+	./unit_test --log_level=error
 
 clean:
 	rm -f *.o core

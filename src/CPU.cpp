@@ -1,4 +1,6 @@
 #include "headers/CPU.h"
+#include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -66,21 +68,6 @@ const unsigned char CPU::opcode_addressing_mode[MAX_BYTE_VAL] = {
 		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 	};
 
-inline int CPU::read_memory(int address)
-{
-	if (address >= 0 && address <= MEM_SIZE) {
-		return memory[address];
-	} else {
-		return -1;
-	}
-}
-
-inline void CPU::write_memory(int address, int value)
-{
-	if (address >= 0 && address <= MEM_SIZE) {
-		memory[address] = value;
-	}
-}
 
 // Load and store
 
@@ -555,30 +542,36 @@ void CPU::brk()
 	PC |= read_memory(INTERRUPT_VECTOR + 1);
 }
 
+// Utils
 
-
+/*
+ * Given an opcode and an operand, the function will resolve what the value
+ * of the operand should be. This is achieved by looking at the addressing
+ * mode for the instruction and thus retrieving the correct value.
+ *
+ * @return The address that the instruction needs to read values from
+ */
 int CPU::resolve_operand(int opcode, int operand)
 {
 	int resolved_operand = 0;
 	unsigned int address = 0;
 	unsigned char most_significant_byte = operand;
 	unsigned char least_significant_byte = operand >> BYTE_LENGTH;
-	signed char relative_address = operand;
 	address = most_significant_byte;
 	address <<= BYTE_LENGTH;
 	address |= least_significant_byte;
 
 	switch(opcode) {
 		case ABSOLUTE:
-			resolved_operand = read_memory(address);
+			resolved_operand = address;
 			break;
 
 		case ABSOLUTE_X:
-			resolved_operand = read_memory(address + X);
+			resolved_operand = read_memory(address) + X;
 			break;
 
 		case ABSOLUTE_Y:
-			resolved_operand = read_memory(address + Y);
+			resolved_operand = read_memory(address) + Y;
 			break;
 
 		case ACCUMULATOR:
@@ -591,9 +584,9 @@ int CPU::resolve_operand(int opcode, int operand)
 
 		case IMPLIED:
 			break;
+
 		case INDEXED_INDIRECT:
-			address = read_memory((operand + X) % ZERO_PAGE_WRAPAROUND);
-			resolved_operand = read_memory(address);
+			resolved_operand = (read_memory(operand) + X) % ZERO_PAGE_WRAPAROUND;
 			break;
 
 		case INDIRECT:
@@ -605,11 +598,11 @@ int CPU::resolve_operand(int opcode, int operand)
 			break;
 
 		case INDIRECT_INDEXED:
-			resolved_operand = read_memory(operand + Y);
+			resolved_operand = read_memory(operand) + Y;
 			break;
 
 		case RELATIVE:
-			resolved_operand = PC + 2 + relative_address; // ?????????????????
+			resolved_operand = PC + (unsigned char)operand; // ?????????????????
 			break;
 
 		case ZERO_PAGE:
@@ -628,6 +621,22 @@ int CPU::resolve_operand(int opcode, int operand)
 	return resolved_operand;
 }
 
+inline int CPU::read_memory(int address)
+{
+	if (address >= 0 && address <= MEM_SIZE) {
+		return memory[address];
+	} else {
+		return -1;
+	}
+}
+
+inline void CPU::write_memory(int address, int value)
+{
+	if (address >= 0 && address <= MEM_SIZE) {
+		memory[address] = value;
+	}
+}
+
 void CPU::set_Z_flag(int value)
 {
 	if (value == 0) {
@@ -639,10 +648,10 @@ void CPU::set_Z_flag(int value)
 
 void CPU::set_N_flag(int value)
 {
-	if ((value & BIT_8_MASK) == 0) {
-		N_flag = false;
-	} else {
+	if (value < 0) {
 		N_flag = true;
+	} else {
+		N_flag = false;
 	}
 }
 
@@ -660,4 +669,95 @@ int CPU::pull()
 		SP = 0;
 	}
 	return memory[STACK_START + (SP++)];
+}
+
+void CPU::update_PS()
+{
+	PS = 0;
+	PS |= N_flag;
+	PS <<= 1;
+	PS |= V_flag;
+	PS <<= 1;
+	PS <<= 1;
+	PS |= B_flag;
+	PS <<= 1;
+	PS |= D_flag;
+	PS <<= 1;
+	PS |= I_flag;
+	PS <<= 1;
+	PS |= Z_flag;
+	PS <<= 1;
+	PS |= C_flag;
+}
+
+void CPU::print_state()
+{
+	cout << "A: " << hex << "0x" << A << endl
+		<< "X: " << "0x" << X << endl
+		<< "Y: " << "0x" << Y << endl
+		<< "PC: " << "0x" << PC << endl
+		<< "SP: " << "0x" << SP << endl << endl;
+	cout << boolalpha << "N: " << N_flag << endl
+		<< "C: " << C_flag << endl
+		<< "Z: " << Z_flag << endl
+		<< "I: " << I_flag << endl
+		<< "D: " << D_flag << endl
+		<< "B: " << B_flag << endl
+		<< "V: " << V_flag << endl
+		<< "S: " << S_flag << endl;
+}
+
+int CPU::get_PC()
+{
+	return PC;
+}
+
+int CPU::get_SP()
+{
+	return SP;
+}
+
+int CPU::get_PS()
+{
+	return PS;
+}
+
+bool CPU::is_N()
+{
+	return N_flag;
+}
+
+bool CPU::is_C()
+{
+	return C_flag;
+}
+
+bool CPU::is_Z()
+{
+	return Z_flag;
+}
+
+bool CPU::is_I()
+{
+	return I_flag;
+}
+
+bool CPU::is_D()
+{
+	return D_flag;
+}
+
+bool CPU::is_B()
+{
+	return B_flag;
+}
+
+bool CPU::is_V()
+{
+	return V_flag;
+}
+
+bool CPU::is_S()
+{
+	return S_flag;
 }
