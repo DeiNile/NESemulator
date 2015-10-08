@@ -1,25 +1,29 @@
-#include "../headers/CPU.h"
+#include "../headers/CPU.hpp"
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE CPU_test
 #include <boost/test/unit_test.hpp>
 #include <stdlib.h>
 #include <time.h>
 #include <iostream>
+#include <stdint.h>
 
 using namespace std;
 
 struct CPU_fixture {
 
 	CPU cpu;
-	int random;
-	int random_neg;
-	int address;
+	uint16_t address;
+	uint8_t value;
+	uint8_t value_2;
+	uint8_t value_negative;
+
 	CPU_fixture() {
-		// CPU cpu;
 		srand(time(NULL));
-		random = rand () + 1;
-		random_neg = random - random - random;
-		address = (rand() + 1) & MEM_SIZE;
+		address = (rand() + 1) % MEM_SIZE;
+		value = (rand() + 1) % (UINT8_MAX + 1);
+		value_2 = (rand() + 1) % (UINT8_MAX + 1);
+		value_negative = (~value) + 1;
+		cpu.write_memory(address, value);
 	};
 
 	~CPU_fixture() {
@@ -27,139 +31,72 @@ struct CPU_fixture {
 	};
 };
 
-BOOST_AUTO_TEST_CASE(memory_write_underflow)
+BOOST_FIXTURE_TEST_SUITE(Load_and_store, CPU_fixture)
+
+BOOST_AUTO_TEST_CASE(lda_test)
 {
-	CPU cpu;
-	cpu.write_memory(-1, 10);
-	BOOST_CHECK(cpu.read_memory(-1) == -1);
+	cpu.lda(address);
+	BOOST_CHECK(cpu.get_A() == value);
+	if (value == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)value < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
 }
 
-BOOST_AUTO_TEST_CASE(memory_write_overflow)
+BOOST_AUTO_TEST_CASE(ldx_test)
 {
-	CPU cpu;
-	cpu.write_memory(65537, 10);
-	BOOST_CHECK(cpu.read_memory(65537) == -1);
+	cpu.ldx(address);
+	BOOST_CHECK(cpu.get_X() == value);
+	if (value == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)value < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
 }
 
-BOOST_AUTO_TEST_CASE(memory_write_test)
+BOOST_AUTO_TEST_CASE(ldy_test)
 {
-	CPU cpu;
-	cpu.write_memory(100, 10);
-	BOOST_CHECK(cpu.read_memory(100) == 10);
+	cpu.ldy(address);
+	BOOST_CHECK(cpu.get_Y() == value);
+	if (value == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)value < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
 }
 
-BOOST_AUTO_TEST_SUITE(Load_and_store)
-
-BOOST_AUTO_TEST_CASE(load_A_positve)
+BOOST_AUTO_TEST_CASE(sta_test)
 {
-	CPU cpu;
-	srand(time(NULL));
-	int random = rand() + 1;
-	cpu.lda(random);
-	BOOST_CHECK_MESSAGE(!cpu.is_N() && !cpu.is_Z(), "ran: " << random << " N:" << cpu.is_Z() << " Z: " << cpu.is_Z());
+	cpu.set_A(value);
+	BOOST_CHECK(cpu.read_memory(address) == value);
 }
 
-BOOST_AUTO_TEST_CASE(load_A_negative)
+BOOST_AUTO_TEST_CASE(stx_test)
 {
-	CPU cpu;
-	srand(time(NULL));
-	int random = rand() + 1;
-	random = random - random - random;
-	cpu.lda(random);
-	BOOST_CHECK_MESSAGE(cpu.is_N() && !cpu.is_Z(), "ran: " << random << " N:" << cpu.is_Z() << " Z: " << cpu.is_Z());
+	cpu.set_X(value);
+	BOOST_CHECK(cpu.read_memory(address) == value);
 }
 
-BOOST_AUTO_TEST_CASE(load_A_zero)
+BOOST_AUTO_TEST_CASE(sty_test)
 {
-	CPU cpu;
-	srand(time(NULL));
-	cpu.lda(0);
-	BOOST_CHECK(!cpu.is_N() && cpu.is_Z());
-}
-
-BOOST_AUTO_TEST_CASE(load_X_positive)
-{
-	CPU cpu;
-	srand(time(NULL));
-	cpu.ldx(rand() + 1);
-	BOOST_CHECK_MESSAGE(!cpu.is_N() && !cpu.is_Z(), "ran: " << random << " N:" << cpu.is_Z() << " Z: " << cpu.is_Z());
-}
-
-BOOST_AUTO_TEST_CASE(load_X_negative)
-{
-	CPU cpu;
-	srand(time(NULL));
-	int random = rand() + 1;
-	random = random - random - random;
-	cpu.ldx(random);
-	BOOST_CHECK_MESSAGE(cpu.is_N() && !cpu.is_Z(), "ran: " << random << " N:" << cpu.is_Z() << " Z: " << cpu.is_Z());
-}
-
-BOOST_AUTO_TEST_CASE(load_X_zero)
-{
-	CPU cpu;
-	srand(time(NULL));
-	cpu.ldx(0);
-	BOOST_CHECK(!cpu.is_N() && cpu.is_Z());
-}
-
-BOOST_AUTO_TEST_CASE(load_Y_positive)
-{
-	CPU cpu;
-	srand(time(NULL));
-	cpu.ldy(rand() + 1);
-	BOOST_CHECK_MESSAGE(!cpu.is_N() && !cpu.is_Z(), "ran: " << random << " N:" << cpu.is_Z() << " Z: " << cpu.is_Z());
-}
-
-BOOST_AUTO_TEST_CASE(load_Y_negative)
-{
-	CPU cpu;
-	srand(time(NULL));
-	int random = rand() + 1;
-	random = random - random - random;
-	cpu.ldy(random);
-	BOOST_CHECK_MESSAGE(cpu.is_N() && !cpu.is_Z(), "ran: " << random << " N:" << cpu.is_Z() << " Z: " << cpu.is_Z());
-}
-
-BOOST_AUTO_TEST_CASE(load_Y_zero)
-{
-	CPU cpu;
-	srand(time(NULL));
-	cpu.ldy(0);
-	BOOST_CHECK(!cpu.is_N() && cpu.is_Z());
-}
-
-BOOST_AUTO_TEST_CASE(store_A_test)
-{
-	CPU cpu;
-	srand(time(NULL));
-	int address = (rand() + 1) % MEM_SIZE;
-	int val = rand();
-	cpu.lda(val);
-	cpu.sta(address);
-	BOOST_CHECK(cpu.read_memory(address) == val);
-}
-
-BOOST_AUTO_TEST_CASE(store_X_test)
-{
-	CPU cpu;
-	srand(time(NULL));
-	int address = (rand() + 1) % MEM_SIZE;
-	int val = rand();
-	cpu.ldx(val);
-	cpu.stx(address);
-	BOOST_CHECK(cpu.read_memory(address) == val);
-}
-
-BOOST_AUTO_TEST_CASE(store_Y_test)
-{
-	CPU cpu;
-	srand(time(NULL));
-	int address = (rand() + 1) % MEM_SIZE;
-	int val = rand();
-	cpu.ldy(val);
-	cpu.sty(address);
-	BOOST_CHECK(cpu.read_memory(address) == val);
+	cpu.set_Y(value);
+	BOOST_CHECK(cpu.read_memory(address) == value);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -168,18 +105,237 @@ BOOST_FIXTURE_TEST_SUITE(increment_decrement, CPU_fixture)
 
 BOOST_AUTO_TEST_CASE(inc_test)
 {
-	int old_val = cpu.read_memory(address);
 	cpu.inc(address);
-	BOOST_CHECK(cpu.read_memory(address) == old_val + 1);
+	BOOST_CHECK(cpu.read_memory(address) == value + 1);
+	if (value + 1 == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)value + 1 < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(inc_overflow_test)
+{
+	cpu.write_memory(address, UINT8_MAX);
+	cpu.inc(address);
+	BOOST_CHECK(cpu.read_memory(address) == 0);
+	if ((uint8_t)(UINT8_MAX + 1) == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)UINT8_MAX + 1 < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(inx_test)
+{
+	cpu.set_X(value);
+	cpu.inx();
+	BOOST_CHECK(cpu.get_X() == value + 1);
+	if (value + 1 == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value - 1) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(iny_test)
+{
+	cpu.set_Y(value);
+	cpu.iny();
+	BOOST_CHECK(cpu.get_Y() == value + 1);
+	if (value + 1 == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value - 1) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
 }
 
 BOOST_AUTO_TEST_CASE(dec_test)
 {
-	int old_val = cpu.read_memory(address);
 	cpu.dec(address);
-	BOOST_CHECK(cpu.read_memory(address) == old_val - 1);
+	BOOST_CHECK(cpu.read_memory(address) == value - 1);
+	if (value - 1 == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value - 1) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
 }
 
+BOOST_AUTO_TEST_CASE(dec_underflow_test)
+{
+	cpu.write_memory(address, 0);
+	cpu.dec(address);
+	// BOOST_CHECK(cpu.read_memory(address) == 0 - 1);
+	if (0 - 1 == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)0 - 1 < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
 
+BOOST_AUTO_TEST_CASE(dex_test)
+{
+	cpu.set_X(value);
+	cpu.dex();
+	BOOST_CHECK(cpu.get_X() == value - 1);
+	if (value - 1 == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)value - 1 < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(dey_test)
+{
+	cpu.set_Y(value);
+	cpu.dey();
+	BOOST_CHECK(cpu.get_Y() == value - 1);
+	if (value - 1 == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)value - 1 < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(Logical, CPU_fixture)
+
+BOOST_AUTO_TEST_CASE(and_test)
+{
+	cpu.set_A(value_2);
+	cpu._and(address);
+	BOOST_CHECK(cpu.get_A() == (value_2 & value));
+	if ((value_2 & value) == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value_2 & value) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(ora_test)
+{
+	cpu.set_A(value_2);
+	cpu.ora(address);
+	BOOST_CHECK(cpu.get_A() == (value_2 | value));
+	if ((value_2 | value) == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value_2 | value) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(eor_test)
+{
+	cpu.set_A(value_2);
+	cpu.eor(address);
+	BOOST_CHECK(cpu.get_A() == (value_2 ^ value));
+	if ((value_2 ^ value) == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value_2 ^ value) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(Jump_branch_compare_test, CPU_fixture)
+
+BOOST_AUTO_TEST_CASE(jmp_test)
+{
+	cpu.jmp(address);
+	BOOST_CHECK(cpu.get_PC() == address);
+}
+
+BOOST_AUTO_TEST_CASE(cmp_with_carry_test)
+{
+	cpu.set_A(value + 1);
+	cpu.cmp(address);
+	BOOST_CHECK(cpu.is_C());
+	// Z and N flag is true, trivially
+}
+
+BOOST_AUTO_TEST_CASE(cmp_without_carry_test)
+{
+	cpu.set_A(value - 1);
+	cpu.cmp(address);
+	BOOST_CHECK(!cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cmp_test)
+{
+	cpu.set_A(value_2);
+	cpu.cmp(address);
+	if (value_2 - value >= 0) {
+		BOOST_CHECK(cpu.is_C());
+	} else {
+		BOOST_CHECK(!cpu.is_C());
+	}
+	if (value_2 - value == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value_2 - value) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
 
 BOOST_AUTO_TEST_SUITE_END()

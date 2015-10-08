@@ -1,4 +1,4 @@
-#include "headers/CPU.h"
+#include "headers/CPU.hpp"
 #include <iostream>
 #include <string>
 
@@ -9,7 +9,7 @@ CPU::CPU()
 
 }
 
-int CPU::memory[MEM_SIZE];
+uint8_t CPU::memory[MEM_SIZE];
 
 const unsigned char CPU::instruction_length[MAX_BYTE_VAL] = {
 		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -71,76 +71,82 @@ const unsigned char CPU::opcode_addressing_mode[MAX_BYTE_VAL] = {
 
 // Load and store
 
-void CPU::lda(int value)
+void CPU::lda(uint16_t address)
 {
-	A = value;
+	A = read_memory(address);
 	set_Z_flag(A);
 	set_N_flag(A);
 }
 
-void CPU::ldx(int value)
+void CPU::ldx(uint16_t address)
 {
-	X = value;
+	X = read_memory(address);
 	set_Z_flag(X);
 	set_N_flag(X);
 }
 
-void CPU::ldy(int value)
+void CPU::ldy(uint16_t address)
 {
-	Y = value;
+	Y = read_memory(address);
 	set_Z_flag(Y);
 	set_N_flag(Y);
 }
 
-void CPU::sta(int memory_address)
+void CPU::sta(uint16_t memory_address)
 {
 	write_memory(memory_address, A);
 }
 
-void CPU::stx(int memory_address)
+void CPU::stx(uint16_t memory_address)
 {
 	write_memory(memory_address, X);
 }
 
-void CPU::sty(int memory_address)
+void CPU::sty(uint16_t memory_address)
 {
 	write_memory(memory_address, Y);
 }
 
 // Arithmetic
 
-void CPU::adc(int value)
+void CPU::adc(uint16_t address)
 {
-	int prev_A = A;
-	A = (A + value) % MAX_BYTE_VAL;
-	if (prev_A + value + (int)C_flag >= MAX_BYTE_VAL) {
-		C_flag = true;
+	uint8_t prev_A = A;
+	uint8_t val = read_memory(address);
+	uint8_t sum;
+	if ((sum = val + prev_A + C_flag) > UINT8_MAX) {
+		sec();
 	} else {
-		C_flag = false;
+		clc();
 	}
-	if (((prev_A ^ value) & BIT_8_MASK) != 0 && ((prev_A ^ A) & BIT_8_MASK) != 0) {
+
+	if ((prev_A ^ sum) & (val ^ sum) & BIT_8_MASK) {
 		V_flag = true;
 	} else {
 		V_flag = false;
 	}
+	A = sum;
 	set_Z_flag(A);
-	set_N_flag(A);
+	set_N_flag(A);	
 }
 
-void CPU::sbc(int value) 
+void CPU::sbc(uint16_t address)
 {
-	int prev_A = A;
-	A = value - A - (1 - C_flag);
-	if (value - prev_A - (1 - (int)C_flag) >= 0) {
-		C_flag = true;
-	} else {
-		C_flag = false;
-	}
-	if (((prev_A ^ value) & BIT_8_MASK) != 0 && ((prev_A ^ A) & BIT_8_MASK) != 0) {
+	uint8_t prev_A = A;
+	uint8_t val = read_memory(address);
+	int sum = val - prev_A - !C_flag;
+	if (sum > INT8_MAX || sum < INT8_MIN) {
 		V_flag = true;
 	} else {
 		V_flag = false;
 	}
+	if (sum > UINT8_MAX) {
+		sec();
+	} else {
+		clc();
+	}
+
+	A = (uint8_t)sum;
 	set_Z_flag(A);
 	set_N_flag(A);
 }
@@ -148,10 +154,10 @@ void CPU::sbc(int value)
 // Increment and decrement
 
 
-void CPU::inc(int address)
+void CPU::inc(uint16_t address)
 {
-	int value = read_memory(address);
-	write_memory(address, ++value);
+	int value = (read_memory(address) + 1) & UINT8_MAX;
+	write_memory(address, value);
 	set_Z_flag(value);
 	set_N_flag(value);
 }
@@ -170,10 +176,10 @@ void CPU::iny()
 	set_N_flag(Y);
 }
 
-void CPU::dec(int address)
+void CPU::dec(uint16_t address)
 {
-	int value = read_memory(address);
-	write_memory(address, --value);
+	int value = (read_memory(address) - 1) & UINT8_MAX;
+	write_memory(address, value);
 	set_Z_flag(value);
 	set_N_flag(value);
 }
@@ -194,21 +200,21 @@ void CPU::dey()
 
 // Logical
 
-void CPU::_and(int address)
+void CPU::_and(uint16_t address)
 {
 	A &= read_memory(address);
 	set_Z_flag(A);
 	set_N_flag(A);
 }
 
-void CPU::ora(int address) 
+void CPU::ora(uint16_t address) 
 {
 	A |= read_memory(address);
 	set_Z_flag(A);
 	set_N_flag(A);
 }
 
-void CPU::eor(int address)
+void CPU::eor(uint16_t address)
 {
 	A ^= read_memory(address);
 	set_Z_flag(A);
@@ -218,101 +224,107 @@ void CPU::eor(int address)
 // Jump, branch, compare and test
 
 // INDIRECT VECTOR SHOULD NOT BE AT PAGE END
-void CPU::jmp(int address)
+void CPU::jmp(uint16_t address)
 {
 	PC = address;
 }
 
-void CPU::cmp(int address)
+void CPU::cmp(uint16_t address)
 {
-	int val = A - read_memory(address);
+	int8_t val = A - read_memory(address);
 	if (val >= 0) {
-		C_flag = true;
+		sec();
+	} else {
+		clc();
 	}
 	set_Z_flag(val);
 	set_N_flag(val);
 }
 
-void CPU::cpx(int address) 
+void CPU::cpx(uint16_t address) 
 {
 	int val = X - read_memory(address);
 	if (val >= 0) {
-		C_flag = true;
+		sec();
+	} else {
+		clc();
 	}
 	set_Z_flag(val);
 	set_N_flag(val);
 }
 
-void CPU::cpy(int address)
+void CPU::cpy(uint16_t address)
 {
 	int val = Y - read_memory(address);
 	if (val >= 0) {
-		C_flag = true;
+		sec();
+	} else {
+		clc();
 	}
 	set_Z_flag(val);
 	set_N_flag(val);
 }
 
-void CPU::bcc(int displacement)
+void CPU::bcc(uint8_t displacement)
 {
 	if (!C_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bcs(int displacement)
+void CPU::bcs(uint8_t displacement)
 {
 	if (C_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::beq(int displacement) 
+void CPU::beq(uint8_t displacement) 
 {
 	if (Z_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bne(int displacement)
+void CPU::bne(uint8_t displacement)
 {
 	if (!Z_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bmi(int displacement)
+void CPU::bmi(uint8_t displacement)
 {
 	if (N_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bpl(int displacement)
+void CPU::bpl(uint8_t displacement)
 {
 	if (!N_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bvs(int displacement) 
+void CPU::bvs(uint8_t displacement) 
 {
 	if (!V_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bvc(int displacement) 
+void CPU::bvc(uint8_t displacement) 
 {
 	if (V_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bit(int address)
+void CPU::bit(uint16_t address)
 {
-	int mem_val = read_memory(address);
-	set_Z_flag(A & mem_val);
+	int mem_val = (A & read_memory(address));
+	set_Z_flag(mem_val);
 	mem_val >>= 6;
 	V_flag = 1 & mem_val;
 	mem_val >>= 1;
@@ -321,7 +333,7 @@ void CPU::bit(int address)
 
 // Shift and rotate
 
-void CPU::asl(int address, bool read_from_memory)
+void CPU::asl(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
 		int mem_val = read_memory(address);
@@ -347,7 +359,7 @@ void CPU::asl(int address, bool read_from_memory)
 	}
 }
 
-void CPU::lsr(int address, bool read_from_memory) 
+void CPU::lsr(uint16_t address, bool read_from_memory) 
 {
 	if (read_from_memory) {
 		int mem_val = read_memory(address);
@@ -372,7 +384,7 @@ void CPU::lsr(int address, bool read_from_memory)
 	}
 }
 
-void CPU::rol(int address, bool read_from_memory)
+void CPU::rol(uint16_t address, bool read_from_memory)
 {
 	bool new_carry;
 	if (read_from_memory) {
@@ -402,7 +414,7 @@ void CPU::rol(int address, bool read_from_memory)
 	}
 }
 
-void CPU::ror(int address, bool read_from_memory)
+void CPU::ror(uint16_t address, bool read_from_memory)
 {
 	bool new_carry;
 	int carry_in_bit_7 = C_flag << BIT_0_TO_7;
@@ -486,6 +498,26 @@ void CPU::plp()
 	PS = pull();
 }
 
+// Subroutine
+
+void CPU::jsr(uint16_t address)
+{
+	push(read_memory(address - 1));
+	PC = address;
+}
+
+void CPU::rts(uint16_t address)
+{
+	PC = pull() + 1;
+}
+
+// CHANGE NEEDED
+void CPU::rti(uint16_t address)
+{
+	set_PS_flags(pull());
+	PC = pull();
+}
+
 
 // Set and reset
 
@@ -545,6 +577,8 @@ void CPU::brk()
 // Utils
 
 /*
+ * DEREFERENCE POINTER?
+ *
  * Given an opcode and an operand, the function will resolve what the value
  * of the operand should be. This is achieved by looking at the addressing
  * mode for the instruction and thus retrieving the correct value.
@@ -621,23 +655,23 @@ int CPU::resolve_operand(int opcode, int operand)
 	return resolved_operand;
 }
 
-inline int CPU::read_memory(int address)
+inline uint8_t CPU::read_memory(uint16_t address)
 {
-	if (address >= 0 && address <= MEM_SIZE) {
-		return memory[address];
-	} else {
-		return -1;
-	}
+	// if (address >= 0 && address <= MEM_SIZE) {
+	// } else {
+	// 	return -1;
+	// }
+	return memory[address];
 }
 
-inline void CPU::write_memory(int address, int value)
+inline void CPU::write_memory(uint16_t address, uint8_t value)
 {
-	if (address >= 0 && address <= MEM_SIZE) {
-		memory[address] = value;
-	}
+	// if (address >= 0 && address < MEM_SIZE) {
+	// }
+	memory[address] = value;
 }
 
-void CPU::set_Z_flag(int value)
+void CPU::set_Z_flag(uint8_t value)
 {
 	if (value == 0) {
 		Z_flag = true;
@@ -646,13 +680,32 @@ void CPU::set_Z_flag(int value)
 	}
 }
 
-void CPU::set_N_flag(int value)
+void CPU::set_N_flag(uint8_t value)
 {
-	if (value < 0) {
+	if (value & BIT_8_MASK) {
 		N_flag = true;
 	} else {
 		N_flag = false;
 	}
+}
+
+void CPU::set_PS_flags(uint8_t value)
+{
+	PS = value;
+	C_flag = (value & 1) ? true : false;
+	value >>= 1;
+	Z_flag = (value & 1) ? true : false;
+	value >>= 1;
+	I_flag = (value & 1) ? true : false;
+	value >>= 1;
+	D_flag = (value & 1) ? true : false;
+	value >>= 1;
+	B_flag = (value & 1) ? true : false;
+	value >>= 1;
+	value >>= 1;
+	V_flag = (value & 1) ? true : false;
+	value >>= 1;
+	N_flag = (value & 1) ? true : false;
 }
 
 void CPU::push(int val)
@@ -707,17 +760,17 @@ void CPU::print_state()
 		<< "S: " << S_flag << endl;
 }
 
-int CPU::get_PC()
+uint16_t CPU::get_PC()
 {
 	return PC;
 }
 
-int CPU::get_SP()
+uint16_t CPU::get_SP()
 {
 	return SP;
 }
 
-int CPU::get_PS()
+uint16_t CPU::get_PS()
 {
 	return PS;
 }
@@ -760,4 +813,34 @@ bool CPU::is_V()
 bool CPU::is_S()
 {
 	return S_flag;
+}
+
+uint8_t CPU::get_X()
+{
+	return X;
+}
+
+uint8_t CPU::get_Y()
+{
+	return Y;
+}
+
+uint8_t CPU::get_A()
+{
+	return A;
+}
+
+void CPU::set_X(uint8_t val)
+{
+	X = val;
+}
+
+void CPU::set_Y(uint8_t val)
+{
+	Y = val;
+}
+
+void CPU::set_A(uint8_t val)
+{
+	A = val;
 }
