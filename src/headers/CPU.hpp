@@ -11,9 +11,11 @@
 #define MIN_SIGNED_BYTE_VAL -127
 #define ZERO_PAGE_WRAPAROUND 0xFF
 #define STACK_POINTER_WRAPAROUND 0xFF
-#define BIT_8_MASK 0x80
+#define BYTE_SIGN_BIT_SET_MASK 0x80
 #define BYTE_LENGTH 8
 #define BIT_0_TO_7 7
+#define FE 0xFE
+#define BYTE_SIGN_UNSET_MAX 0x7F
 
 
 #define STACK_START 0x0100
@@ -107,6 +109,7 @@ public:
 	void pha(); 	// Push A onto stack
 	void php(); 	// Pulls A from stack
 	void plp(); 	// Pulls PS from stack
+	void pla();		// Pulls A from stack
 
 	// Subroutine
 	void jsr(uint16_t); 	// Jump to subroutine
@@ -160,6 +163,9 @@ public:
 	void set_Z(bool);
 	void set_N(bool);
 	void set_V(bool);
+
+	static uint8_t rot_l(uint8_t);
+	static uint8_t rot_r(uint8_t);
 
 protected:
 

@@ -1,6 +1,7 @@
 #include "headers/CPU.hpp"
 #include <iostream>
 #include <string>
+#include <bitset>
 
 using namespace std;
 
@@ -120,7 +121,7 @@ void CPU::adc(uint16_t address)
 		clc();
 	}
 
-	if ((prev_A ^ sum) & (val ^ sum) & BIT_8_MASK) {
+	if ((prev_A ^ sum) & (val ^ sum) & BYTE_SIGN_BIT_SET_MASK) {
 		V_flag = true;
 	} else {
 		V_flag = false;
@@ -339,24 +340,24 @@ void CPU::bit(uint16_t address)
 void CPU::asl(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
-		int mem_val = read_memory(address);
-		if ((mem_val & BIT_8_MASK) == 0) {
+		uint8_t mem_val = read_memory(address);
+		if ((mem_val & BYTE_SIGN_BIT_SET_MASK) == 0) {
 			C_flag = false;
 		} else {
 			C_flag = true;
 		}
-		mem_val <<= 1;
+		mem_val = (mem_val << 1) & FE;
 		set_Z_flag(mem_val);
 		set_N_flag(mem_val);
 		write_memory(address, mem_val);
 
 	} else {
-		if ((A & BIT_8_MASK) == 0) {
+		if ((A & BYTE_SIGN_BIT_SET_MASK) == 0) {
 			C_flag = false;
 		} else {
 			C_flag = true;
 		}
-		A <<= 1;
+		A = (A << 1) & FE;
 		set_Z_flag(A);
 		set_N_flag(A);
 	}
@@ -366,22 +367,22 @@ void CPU::lsr(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
 		int mem_val = read_memory(address);
-		if ((mem_val & 1) == 0) {
+		if ((mem_val & BYTE_SIGN_UNSET_MAX) == 0) {
 			C_flag = false;
 		} else {
 			C_flag = true;
 		}
-		mem_val >>= 1;
+		mem_val = (mem_val >> 1) & BYTE_SIGN_UNSET_MAX;
 		set_Z_flag(mem_val);
 		set_N_flag(mem_val);
 		write_memory(address, mem_val);
 	} else {
-		if ((A & 1) == 0) {
+		if ((A & BYTE_SIGN_UNSET_MAX) == 0) {
 			C_flag = false;
 		} else {
 			C_flag = true;
 		}
-		A >>= 1;
+		A = (A >> 1) & BYTE_SIGN_UNSET_MAX;
 		set_Z_flag(A);
 		set_N_flag(A);
 	}
@@ -390,54 +391,87 @@ void CPU::lsr(uint16_t address, bool read_from_memory)
 void CPU::rol(uint16_t address, bool read_from_memory)
 {
 	bool new_carry;
+	uint8_t new_val;
 	if (read_from_memory) {
-		int mem_val = read_memory(address);
-		if ((mem_val & BIT_8_MASK) == 0) {
-			new_carry = false;
-		} else {
-			new_carry = true;
-		}
-		mem_val <<= 1;
-		mem_val |= C_flag;
-		C_flag = new_carry;
-		set_Z_flag(mem_val);
-		set_N_flag(mem_val);
-		write_memory(address, mem_val);
+		new_val = read_memory(address);
 	} else {
-		if ((A & BIT_8_MASK) == 0) {
-			new_carry = false;
-		} else {
-			new_carry = true;
-		}
-		A <<= 1;
-		A |= C_flag;
-		C_flag = new_carry;
-		set_Z_flag(A);
-		set_N_flag(A);
+		new_val = A;
 	}
+	new_carry = ((new_val & BYTE_SIGN_BIT_SET_MASK) == 0) ? false : true;
+	new_val = rot_l(new_val);
+	C_flag = new_carry;
+	set_Z_flag(new_val);
+	set_N_flag(new_val);
+	if (read_from_memory) {
+		write_memory(address, new_val);
+	} else {
+		A = new_val;
+	}
+
+	// if (read_from_memory) {
+	// 	uint8_t mem_val = read_memory(address);
+	// 	if ((mem_val & BYTE_SIGN_BIT_SET_MASK) == 0) {
+	// 		new_carry = false;
+	// 	} else {
+	// 		new_carry = true;
+	// 	}
+	// 	mem_val = rot_l(mem_val);
+	// 	C_flag = new_carry;
+	// 	set_Z_flag(mem_val);
+	// 	set_N_flag(mem_val);
+	// 	write_memory(address, mem_val);
+	// } else {
+	// 	if ((A & BYTE_SIGN_BIT_SET_MASK) == 0) {
+	// 		new_carry = false;
+	// 	} else {
+	// 		new_carry = true;
+	// 	}
+	// 	A = rot_l(A);
+	// 	C_flag = new_carry;
+	// 	set_Z_flag(A);
+	// 	set_N_flag(A);
+	// }
 }
 
 void CPU::ror(uint16_t address, bool read_from_memory)
 {
 	bool new_carry;
-	int carry_in_bit_7 = C_flag << BIT_0_TO_7;
+	uint8_t new_val;
 	if (read_from_memory) {
-		int mem_val = read_memory(address);
-		new_carry = (mem_val & 1);
-		mem_val >>= 1;
-		mem_val |= carry_in_bit_7;
-		C_flag = new_carry;
-		set_Z_flag(mem_val);
-		set_N_flag(mem_val);
-		write_memory(address, mem_val);
+		new_val = read_memory(address);
 	} else {
-		new_carry = (A & 1);
-		A >>= 1;
-		A |= carry_in_bit_7;
-		C_flag = new_carry;
-		set_Z_flag(A);
-		set_N_flag(A);
+		new_val = A;
 	}
+	new_carry = ((new_val & BYTE_SIGN_BIT_SET_MASK) == 0) ? false : true;
+	new_val = rot_r(new_val);
+	C_flag = new_carry;
+	set_Z_flag(new_val);
+	set_N_flag(new_val);
+	if (read_from_memory) {
+		write_memory(address, new_val);
+	} else {
+		A = new_val;
+	}
+
+	// bool new_carry;
+	// int carry_in_bit_7 = C_flag << BIT_0_TO_7;
+	// if (read_from_memory) {
+	// 	int mem_val = read_memory(address);
+	// 	new_carry = (mem_val & 1);
+	// 	mem_val >>= 1;
+	// 	mem_val |= carry_in_bit_7;
+	// 	C_flag = new_carry;
+	// 	set_Z_flag(mem_val);
+	// 	set_N_flag(mem_val);
+	// 	write_memory(address, mem_val);
+	// } else {
+	// 	new_carry = (A & 1);
+	// 	A >>= 1;
+	// 	A |= carry_in_bit_7;
+	// 	C_flag = new_carry;
+	// 	set_Z_flag(A);
+	// 	set_N_flag(A);
+	// }
 }
 
 // Transfer
@@ -482,8 +516,6 @@ void CPU::tsx()
 void CPU::txs()
 {
 	SP = X;
-	set_Z_flag(SP);
-	set_N_flag(SP);
 }
 
 void CPU::pha()
@@ -499,6 +531,14 @@ void CPU::php()
 void CPU::plp()
 {
 	PS = pull();
+	update_PS();
+}
+
+void CPU::pla()
+{
+	A = pull();
+	set_Z_flag(A);
+	set_N_flag(A);
 }
 
 // Subroutine
@@ -685,7 +725,7 @@ void CPU::set_Z_flag(uint8_t value)
 
 void CPU::set_N_flag(uint8_t value)
 {
-	if (value & BIT_8_MASK) {
+	if (value & BYTE_SIGN_BIT_SET_MASK) {
 		N_flag = true;
 	} else {
 		N_flag = false;
@@ -724,7 +764,7 @@ int CPU::pull()
 	if (SP + 1 > STACK_POINTER_WRAPAROUND) {
 		SP = 0;
 	}
-	return memory[STACK_START + (SP++)];
+	return memory[STACK_START + (++SP)];
 }
 
 void CPU::update_PS()
@@ -871,4 +911,16 @@ void CPU::set_N(bool val)
 void CPU::set_V(bool val)
 {
 	V_flag = val;
+}
+
+inline uint8_t CPU::rot_r(uint8_t value)
+{
+	// cout << bitset<8>(value) << " == " << bitset<8>((value << 7) | (value >> 1)) << endl;
+	return (value << 7) | (value >> 1);
+}
+
+inline uint8_t CPU::rot_l(uint8_t value)
+{
+	// cout << bitset<8>(value) << " == " << bitset<8>((value >> 7) | (value << 1)) << endl;
+	return (value >> 7) | (value << 1);
 }
