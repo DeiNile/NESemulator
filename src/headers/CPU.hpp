@@ -155,6 +155,11 @@ public:
 	void set_X(uint8_t);
 	void set_Y(uint8_t);
 	void set_A(uint8_t);
+	void set_PC(uint16_t);
+	void set_C(bool);
+	void set_Z(bool);
+	void set_N(bool);
+	void set_V(bool);
 
 protected:
 
@@ -162,10 +167,10 @@ private:
 	// Registers
 	uint16_t PC; // Program counter, 16 bit
 	uint16_t SP; // Stack pointer, 8 bit, offset from 0x0100
-	int8_t PS; // processor status / status register, 8 bit
-	int8_t A;  // accumulator, 8 bit
-	int8_t X;  // index register, 8 bit
-	int8_t Y;  // index register, 8 bit
+	uint8_t PS; // processor status / status register, 8 bit
+	uint8_t A;  // accumulator, 8 bit
+	uint8_t X;  // index register, 8 bit
+	uint8_t Y;  // index register, 8 bit
 
 	bool N_flag;
 	bool C_flag;

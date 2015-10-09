@@ -19,7 +19,7 @@ struct CPU_fixture {
 
 	CPU_fixture() {
 		srand(time(NULL));
-		address = (rand() + 1) % MEM_SIZE;
+		address = (rand() + 1) % (UINT16_MAX + 1);
 		value = (rand() + 1) % (UINT8_MAX + 1);
 		value_2 = (rand() + 1) % (UINT8_MAX + 1);
 		value_negative = (~value) + 1;
@@ -307,7 +307,6 @@ BOOST_AUTO_TEST_CASE(cmp_with_carry_test)
 	cpu.set_A(value + 1);
 	cpu.cmp(address);
 	BOOST_CHECK(cpu.is_C());
-	// Z and N flag is true, trivially
 }
 
 BOOST_AUTO_TEST_CASE(cmp_without_carry_test)
@@ -321,7 +320,7 @@ BOOST_AUTO_TEST_CASE(cmp_test)
 {
 	cpu.set_A(value_2);
 	cpu.cmp(address);
-	if (value_2 - value >= 0) {
+	if (value_2 >= value) {
 		BOOST_CHECK(cpu.is_C());
 	} else {
 		BOOST_CHECK(!cpu.is_C());
@@ -336,6 +335,214 @@ BOOST_AUTO_TEST_CASE(cmp_test)
 	} else {
 		BOOST_CHECK(!cpu.is_N());
 	}
+}
+
+BOOST_AUTO_TEST_CASE(cpx_with_carry_test)
+{
+	cpu.set_X(value + 1);
+	cpu.cpx(address);
+	BOOST_CHECK(cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpx_without_carry_test)
+{
+	cpu.set_X(value - 1);
+	cpu.cpx(address);
+	BOOST_CHECK(!cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpx_test)
+{
+	cpu.set_X(value_2);
+	cpu.cpx(address);
+	if (value_2 >= value) {
+		BOOST_CHECK(cpu.is_C());
+	} else {
+		BOOST_CHECK(!cpu.is_C());
+	}
+	if (value_2 - value == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value_2 - value) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(cpy_with_carry_test)
+{
+	cpu.set_Y(value + 1);
+	cpu.cpy(address);
+	BOOST_CHECK(cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpy_without_carry_test)
+{
+	cpu.set_Y(value - 1);
+	cpu.cpy(address);
+	BOOST_CHECK(!cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpy_test)
+{
+	cpu.set_Y(value_2);
+	cpu.cpy(address);
+	if (value_2 >= value) {
+		BOOST_CHECK(cpu.is_C());
+	} else {
+		BOOST_CHECK(!cpu.is_C());
+	}
+	if (value_2 - value == 0) {
+		BOOST_CHECK(cpu.is_Z());
+	} else {
+		BOOST_CHECK(!cpu.is_Z());
+	}
+	if ((int8_t)(value_2 - value) < 0) {
+		BOOST_CHECK(cpu.is_N());
+	} else {
+		BOOST_CHECK(!cpu.is_N());
+	}
+}
+
+BOOST_AUTO_TEST_CASE(bcc_with_carry_test)
+{
+	cpu.set_PC(value_2);
+	cpu.set_C(true);
+	cpu.bcc(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bcc_without_carry_test)
+{
+	cpu.set_PC(value_2);
+	cpu.set_C(false);
+	cpu.bcc(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bcs_with_carry_test)
+{
+	cpu.set_PC(value_2);
+	cpu.set_C(true);
+	cpu.bcs(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bcs_without_carry_test)
+{
+	cpu.set_PC(value_2);
+	cpu.set_C(false);
+	cpu.bcs(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(beq_with_zero_test)
+{
+	cpu.set_Z(true);
+	cpu.set_PC(value_2);
+	cpu.beq(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(beq_without_zero_test)
+{
+	cpu.set_Z(false);
+	cpu.set_PC(value_2);
+	cpu.beq(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bne_with_zero_test)
+{
+	cpu.set_Z(true);
+	cpu.set_PC(value_2);
+	cpu.bne(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bne_without_zero_test)
+{
+	cpu.set_Z(false);
+	cpu.set_PC(value_2);
+	cpu.bne(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bmi_negative_test)
+{
+	cpu.set_N(true);
+	cpu.set_PC(value_2);
+	cpu.bmi(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bmi_positive_test)
+{
+	cpu.set_N(false);
+	cpu.set_PC(value_2);
+	cpu.bmi(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bpl_negative_test)
+{
+	cpu.set_N(true);
+	cpu.set_PC(value_2);
+	cpu.bpl(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bpl_positive_test)
+{
+	cpu.set_N(false);
+	cpu.set_PC(value_2);
+	cpu.bpl(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bvs_with_overflow_test)
+{
+	cpu.set_V(true);
+	cpu.set_PC(value_2);
+	cpu.bvs(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bvs_without_overflow_test)
+{
+	cpu.set_V(false);
+	cpu.set_PC(value_2);
+	cpu.bvs(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bvc_with_overflow_test)
+{
+	cpu.set_V(true);
+	cpu.set_PC(value_2);
+	cpu.bvc(value);
+	BOOST_CHECK(cpu.get_PC() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bvc_without_overflow_test)
+{
+	cpu.set_V(false);
+	cpu.set_PC(value_2);
+	cpu.bvc(value);
+	BOOST_CHECK(cpu.get_PC() == value + value_2);
+}
+
+BOOST_AUTO_TEST_CASE(bit_test)
+{
+	cpu.set_A(value_2);
+	cpu.bit(address);
+	bool val = ((value_2 & value) == 0) ? true : false;
+	BOOST_CHECK(cpu.is_Z() == val);
+	BOOST_CHECK(cpu.is_V() == (((value_2 & value) >> 6) & 1));
+	BOOST_CHECK(cpu.is_N() == (((value_2 & value) >> 7) & 1));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

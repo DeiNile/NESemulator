@@ -231,8 +231,9 @@ void CPU::jmp(uint16_t address)
 
 void CPU::cmp(uint16_t address)
 {
-	int8_t val = A - read_memory(address);
-	if (val >= 0) {
+	uint8_t mem = read_memory(address);
+	uint8_t val = A - mem;
+	if (A >= mem) {
 		sec();
 	} else {
 		clc();
@@ -243,8 +244,9 @@ void CPU::cmp(uint16_t address)
 
 void CPU::cpx(uint16_t address) 
 {
-	int val = X - read_memory(address);
-	if (val >= 0) {
+	uint8_t mem = read_memory(address);
+	uint8_t val = X - mem;
+	if (X >= mem) {
 		sec();
 	} else {
 		clc();
@@ -255,8 +257,9 @@ void CPU::cpx(uint16_t address)
 
 void CPU::cpy(uint16_t address)
 {
-	int val = Y - read_memory(address);
-	if (val >= 0) {
+	uint8_t mem = read_memory(address);
+	uint8_t val = Y - mem;
+	if (Y >= mem) {
 		sec();
 	} else {
 		clc();
@@ -309,14 +312,14 @@ void CPU::bpl(uint8_t displacement)
 
 void CPU::bvs(uint8_t displacement) 
 {
-	if (!V_flag) {
+	if (V_flag) {
 		PC += displacement;
 	}
 }
 
 void CPU::bvc(uint8_t displacement) 
 {
-	if (V_flag) {
+	if (!V_flag) {
 		PC += displacement;
 	}
 }
@@ -326,9 +329,9 @@ void CPU::bit(uint16_t address)
 	int mem_val = (A & read_memory(address));
 	set_Z_flag(mem_val);
 	mem_val >>= 6;
-	V_flag = 1 & mem_val;
+	V_flag = mem_val & 1;
 	mem_val >>= 1;
-	N_flag = 1 & mem_val;
+	N_flag = mem_val & 1;
 }
 
 // Shift and rotate
@@ -843,4 +846,29 @@ void CPU::set_Y(uint8_t val)
 void CPU::set_A(uint8_t val)
 {
 	A = val;
+}
+
+void CPU::set_PC(uint16_t val)
+{
+	PC = val;
+}
+
+void CPU::set_C(bool val)
+{
+	C_flag = val;
+}
+
+void CPU::set_Z(bool val)
+{
+	Z_flag = val;
+}
+
+void CPU::set_N(bool val)
+{
+	N_flag = val;
+}
+
+void CPU::set_V(bool val)
+{
+	V_flag = val;
 }
