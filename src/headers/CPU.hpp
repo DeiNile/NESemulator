@@ -18,8 +18,8 @@
 #define BYTE_SIGN_UNSET_MAX 0x7F
 
 
-#define STACK_START 0x0100
-#define STACK_END 0x0200
+#define STACK_START 0x01FF
+#define STACK_END_OFFSET 0xFF
 
 #define INTERRUPT_VECTOR 0xFFFE
 
@@ -113,8 +113,8 @@ public:
 
 	// Subroutine
 	void jsr(uint16_t); 	// Jump to subroutine
-	void rts(uint16_t); 	// Return from subroutine
-	void rti(uint16_t); 	// Return from interrupt
+	void rts(); 	// Return from subroutine
+	void rti(); 	// Return from interrupt
 
 	// Set and reset
 	void clc(); 	// Clear C flag
@@ -133,15 +133,17 @@ public:
 	void set_Z_flag(uint8_t);
 	void set_N_flag(uint8_t);
 	void set_PS_flags(uint8_t);
-	void push(int);
-	int pull();
+	void push(uint8_t);
+	void push_address(uint16_t);
+	uint8_t pull();
+	uint16_t pull_address();
 	void update_PS();
 	void print_state();
 	string hello_world();
 
 	// Functions to be used with unit tests
 	uint16_t get_PC();
-	uint16_t get_SP();
+	uint8_t get_SP();
 	uint16_t get_PS();
 	uint8_t get_X();
 	uint8_t get_Y();
@@ -159,6 +161,8 @@ public:
 	void set_Y(uint8_t);
 	void set_A(uint8_t);
 	void set_PC(uint16_t);
+	void set_SP(uint8_t);
+	void set_PS(uint8_t);
 	void set_C(bool);
 	void set_Z(bool);
 	void set_N(bool);
@@ -172,7 +176,7 @@ protected:
 private:
 	// Registers
 	uint16_t PC; // Program counter, 16 bit
-	uint16_t SP; // Stack pointer, 8 bit, offset from 0x0100
+	uint8_t SP; // Stack pointer, 8 bit, offset from 0x0100
 	uint8_t PS; // processor status / status register, 8 bit
 	uint8_t A;  // accumulator, 8 bit
 	uint8_t X;  // index register, 8 bit

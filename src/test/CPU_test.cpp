@@ -13,6 +13,7 @@ struct CPU_fixture {
 
 	CPU cpu;
 	uint16_t address;
+	uint16_t address_2;
 	uint8_t value;
 	uint8_t value_2;
 	uint8_t value_negative;
@@ -20,6 +21,7 @@ struct CPU_fixture {
 	CPU_fixture() {
 		srand(time(NULL));
 		address = (rand() + 1) % (UINT16_MAX + 1);
+		address_2 = (rand() + 1) % (UINT16_MAX + 1);
 		value = (rand() + 1) % (UINT8_MAX + 1);
 		value_2 = (rand() + 1) % (UINT8_MAX + 1);
 		value_negative = -value;
@@ -654,9 +656,87 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(Stack_tests, CPU_fixture)
 
+BOOST_AUTO_TEST_CASE(tsx_test)
+{
+	cpu.set_SP(value);
+	cpu.tsx();
+	BOOST_CHECK(cpu.get_X() == value);
+	BOOST_CHECK(cpu.is_Z() == (value == 0));
+	BOOST_CHECK(cpu.is_N() == ((value & BYTE_SIGN_BIT_SET_MASK) != 0));
+}
+
+BOOST_AUTO_TEST_CASE(txs_test)
+{
+	cpu.set_X(value);
+	cpu.txs();
+	BOOST_CHECK(cpu.get_SP() == value);
+}
+
+BOOST_AUTO_TEST_CASE(pha_test)
+{
+	cpu.set_A(value);
+	cpu.pha();
+	BOOST_CHECK(cpu.pull() == value);
+}
+
+BOOST_AUTO_TEST_CASE(php_test)
+{
+	cpu.set_PS(value);
+	cpu.php();
+	BOOST_CHECK(cpu.pull() == value);
+}
+
+BOOST_AUTO_TEST_CASE(plp_test)
+{
+	cpu.push(value);
+	cpu.plp();
+	BOOST_CHECK(cpu.get_PS() == value);
+	BOOST_CHECK(cpu.is_C() == (value & 1));
+	BOOST_CHECK(cpu.is_Z() == ((value >> 1) & 1));
+	BOOST_CHECK(cpu.is_I() == ((value >> 2) & 1));
+	BOOST_CHECK(cpu.is_D() == ((value >> 3) & 1));
+	BOOST_CHECK(cpu.is_B() == ((value >> 4) & 1));
+	BOOST_CHECK(cpu.is_V() == ((value >> 6) & 1));
+	BOOST_CHECK(cpu.is_N() == ((value >> 7) & 1));
+}
+
+BOOST_AUTO_TEST_CASE(pla_test)
+{
+	cpu.push(value);
+	cpu.pla();
+	BOOST_CHECK(cpu.get_A() == value);
+	BOOST_CHECK(cpu.is_Z() == (value == 0));
+	BOOST_CHECK(cpu.is_N() == ((value >> 7) & 1));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
 BOOST_FIXTURE_TEST_SUITE(Subroutine_tests, CPU_fixture)
+
+BOOST_AUTO_TEST_CASE(jsr_test)
+{
+	cpu.set_PC(address);
+	cpu.jsr(address_2);
+	BOOST_CHECK(cpu.get_PC() == address_2);
+	uint16_t temp = cpu.pull_address();
+	BOOST_CHECK(temp == address - 1);
+}
+
+BOOST_AUTO_TEST_CASE(rts_test)
+{
+	cpu.push_address(address);
+	cpu.rts();
+	BOOST_CHECK(cpu.get_PC() == address + 1);
+}
+
+BOOST_AUTO_TEST_CASE(rti_test)
+{
+	cpu.push_address(address);
+	cpu.push(value);
+	cpu.rti();
+	BOOST_CHECK(cpu.get_PS() == value);
+	BOOST_CHECK(cpu.get_PC() == address);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

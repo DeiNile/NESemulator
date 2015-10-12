@@ -7,7 +7,7 @@ using namespace std;
 
 CPU::CPU()
 {
-
+	SP = STACK_END_OFFSET;
 }
 
 uint8_t CPU::memory[MEM_SIZE];
@@ -530,8 +530,8 @@ void CPU::php()
 
 void CPU::plp()
 {
-	PS = pull();
-	update_PS();
+	set_PS_flags(pull());
+	// PS = pull();
 }
 
 void CPU::pla()
@@ -545,20 +545,19 @@ void CPU::pla()
 
 void CPU::jsr(uint16_t address)
 {
-	push(read_memory(address - 1));
+	push_address(PC - 1);
 	PC = address;
 }
 
-void CPU::rts(uint16_t address)
+void CPU::rts()
 {
-	PC = pull() + 1;
+	PC = pull_address() + 1;
 }
 
-// CHANGE NEEDED
-void CPU::rti(uint16_t address)
+void CPU::rti()
 {
-	set_PS_flags(pull());
-	PC = pull();
+	PS = pull();
+	PC = pull_address();
 }
 
 
@@ -751,20 +750,32 @@ void CPU::set_PS_flags(uint8_t value)
 	N_flag = (value & 1) ? true : false;
 }
 
-void CPU::push(int val)
+void CPU::push(uint8_t val)
 {
-	if (SP - 1 < 0) {
-		SP = 0;
-	}
 	memory[STACK_START + (SP--)] = val;
 }
 
-int CPU::pull()
+void CPU::push_address(uint16_t address)
 {
-	if (SP + 1 > STACK_POINTER_WRAPAROUND) {
-		SP = 0;
-	}
+	uint8_t low_byte = address;
+	uint8_t high_byte = (address >> BYTE_LENGTH);
+	push(low_byte);
+	push(high_byte);
+}
+
+uint8_t CPU::pull()
+{
 	return memory[STACK_START + (++SP)];
+}
+
+uint16_t CPU::pull_address()
+{
+	uint8_t high_byte = pull();
+	uint8_t low_byte = pull();
+	uint16_t address = high_byte;
+	address <<= BYTE_LENGTH;
+	address |= low_byte;
+	return address;
 }
 
 void CPU::update_PS()
@@ -808,7 +819,7 @@ uint16_t CPU::get_PC()
 	return PC;
 }
 
-uint16_t CPU::get_SP()
+uint8_t CPU::get_SP()
 {
 	return SP;
 }
@@ -911,6 +922,16 @@ void CPU::set_N(bool val)
 void CPU::set_V(bool val)
 {
 	V_flag = val;
+}
+
+void CPU::set_SP(uint8_t val)
+{
+	SP = val;
+}
+
+void CPU::set_PS(uint8_t val)
+{
+	PS = val;
 }
 
 inline uint8_t CPU::rot_r(uint8_t value)
