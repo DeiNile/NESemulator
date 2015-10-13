@@ -407,30 +407,6 @@ void CPU::rol(uint16_t address, bool read_from_memory)
 	} else {
 		A = new_val;
 	}
-
-	// if (read_from_memory) {
-	// 	uint8_t mem_val = read_memory(address);
-	// 	if ((mem_val & BYTE_SIGN_BIT_SET_MASK) == 0) {
-	// 		new_carry = false;
-	// 	} else {
-	// 		new_carry = true;
-	// 	}
-	// 	mem_val = rot_l(mem_val);
-	// 	C_flag = new_carry;
-	// 	set_Z_flag(mem_val);
-	// 	set_N_flag(mem_val);
-	// 	write_memory(address, mem_val);
-	// } else {
-	// 	if ((A & BYTE_SIGN_BIT_SET_MASK) == 0) {
-	// 		new_carry = false;
-	// 	} else {
-	// 		new_carry = true;
-	// 	}
-	// 	A = rot_l(A);
-	// 	C_flag = new_carry;
-	// 	set_Z_flag(A);
-	// 	set_N_flag(A);
-	// }
 }
 
 void CPU::ror(uint16_t address, bool read_from_memory)
@@ -452,26 +428,6 @@ void CPU::ror(uint16_t address, bool read_from_memory)
 	} else {
 		A = new_val;
 	}
-
-	// bool new_carry;
-	// int carry_in_bit_7 = C_flag << BIT_0_TO_7;
-	// if (read_from_memory) {
-	// 	int mem_val = read_memory(address);
-	// 	new_carry = (mem_val & 1);
-	// 	mem_val >>= 1;
-	// 	mem_val |= carry_in_bit_7;
-	// 	C_flag = new_carry;
-	// 	set_Z_flag(mem_val);
-	// 	set_N_flag(mem_val);
-	// 	write_memory(address, mem_val);
-	// } else {
-	// 	new_carry = (A & 1);
-	// 	A >>= 1;
-	// 	A |= carry_in_bit_7;
-	// 	C_flag = new_carry;
-	// 	set_Z_flag(A);
-	// 	set_N_flag(A);
-	// }
 }
 
 // Transfer
@@ -627,75 +583,73 @@ void CPU::brk()
  *
  * @return The address that the instruction needs to read values from
  */
-int CPU::resolve_operand(int opcode, int operand)
+uint16_t CPU::resolve_operand(int opcode, uint8_t high, uint8_t low)
 {
-	int resolved_operand = 0;
-	unsigned int address = 0;
-	unsigned char most_significant_byte = operand;
-	unsigned char least_significant_byte = operand >> BYTE_LENGTH;
-	address = most_significant_byte;
+	uint16_t ret = 0;
+	uint16_t address = high;
 	address <<= BYTE_LENGTH;
-	address |= least_significant_byte;
+	address |= low;
 
 	switch(opcode) {
 		case ABSOLUTE:
-			resolved_operand = address;
+			ret = read_memory(address);
 			break;
 
 		case ABSOLUTE_X:
-			resolved_operand = read_memory(address) + X;
+			ret = (address + X) & UINT16_MAX;
 			break;
 
 		case ABSOLUTE_Y:
-			resolved_operand = read_memory(address) + Y;
+			ret = (address + Y) & UINT16_MAX;
 			break;
 
 		case ACCUMULATOR:
-			resolved_operand = A;
 			break;
 
 		case IMMEDIATE:
-			resolved_operand = operand;
+			ret = low;
 			break;
 
 		case IMPLIED:
 			break;
 
 		case INDEXED_INDIRECT:
-			resolved_operand = (read_memory(operand) + X) % ZERO_PAGE_WRAPAROUND;
+			ret = read_memory((low + X + 1) & UINT8_MAX);
+			ret <<= BYTE_LENGTH;
+			ret |= read_memory((low + X) & UINT8_MAX);
 			break;
 
 		case INDIRECT:
-			// Read most significant byte of address
-			resolved_operand = read_memory(address + 1); 
-			resolved_operand <<= BYTE_LENGTH;
-			// Read least significant byte of address
-			resolved_operand |= read_memory(address);
+			ret = read_memory(low + 1);
+			ret <<= BYTE_LENGTH;
+			ret |= read_memory(low);
 			break;
 
 		case INDIRECT_INDEXED:
-			resolved_operand = read_memory(operand) + Y;
+			ret = read_memory((low + 1) & UINT8_MAX);
+			ret <<= BYTE_LENGTH;
+			ret |= read_memory(low);
+			ret = ((ret + Y) & UINT16_MAX);
 			break;
 
 		case RELATIVE:
-			resolved_operand = PC + (unsigned char)operand; // ?????????????????
 			break;
 
 		case ZERO_PAGE:
-			resolved_operand = read_memory(operand);
+			ret = low;
 			break;
 
 		case ZERO_PAGE_X:
-			resolved_operand = (X + read_memory(operand)) % ZERO_PAGE_WRAPAROUND;
+			ret = (low + X) & UINT8_MAX;
 			break;
 
 		case ZERO_PAGE_Y:
-			resolved_operand = (Y + read_memory(operand)) % ZERO_PAGE_WRAPAROUND;
+			ret = (low + Y) & UINT8_MAX;
 			break;
 	}
-
-	return resolved_operand;
+	return ret;
 }
+
 
 inline uint8_t CPU::read_memory(uint16_t address)
 {
@@ -813,6 +767,21 @@ void CPU::print_state()
 		<< "V: " << V_flag << endl
 		<< "S: " << S_flag << endl;
 }
+
+
+inline uint8_t CPU::rot_r(uint8_t value)
+{
+	// cout << bitset<8>(value) << " == " << bitset<8>((value << 7) | (value >> 1)) << endl;
+	return (value << 7) | (value >> 1);
+}
+
+inline uint8_t CPU::rot_l(uint8_t value)
+{
+	// cout << bitset<8>(value) << " == " << bitset<8>((value >> 7) | (value << 1)) << endl;
+	return (value >> 7) | (value << 1);
+}
+
+// Functions strictly for testing purposes
 
 uint16_t CPU::get_PC()
 {
@@ -932,16 +901,4 @@ void CPU::set_SP(uint8_t val)
 void CPU::set_PS(uint8_t val)
 {
 	PS = val;
-}
-
-inline uint8_t CPU::rot_r(uint8_t value)
-{
-	// cout << bitset<8>(value) << " == " << bitset<8>((value << 7) | (value >> 1)) << endl;
-	return (value << 7) | (value >> 1);
-}
-
-inline uint8_t CPU::rot_l(uint8_t value)
-{
-	// cout << bitset<8>(value) << " == " << bitset<8>((value >> 7) | (value << 1)) << endl;
-	return (value >> 7) | (value << 1);
 }
