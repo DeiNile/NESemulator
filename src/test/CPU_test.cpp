@@ -20,10 +20,10 @@ struct CPU_fixture {
 
 	CPU_fixture() {
 		srand(time(NULL));
-		address = (rand() + 1) % (UINT16_MAX + 1);
-		address_2 = (rand() + 1) % (UINT16_MAX + 1);
-		value = (rand() + 1) % (UINT8_MAX + 1);
-		value_2 = (rand() + 1) % (UINT8_MAX + 1);
+		address        = (rand() + 1) % (UINT16_MAX + 1);
+		address_2      = (rand() + 1) % (UINT16_MAX + 1);
+		value          = (rand() + 1) % (UINT8_MAX + 1);
+		value_2        = (rand() + 1) % (UINT8_MAX + 1);
 		value_negative = -value;
 		cpu.write_memory(address, value);
 	};
@@ -33,27 +33,72 @@ struct CPU_fixture {
 	};
 };
 
+struct CPU_instructin_fixture {
+	CPU cpu;
+	uint8_t low;
+	uint8_t high;
+	uint8_t opcode;
+
+	CPU_instructin_fixture() {
+		srand(time(NULL));
+		low    = (rand() % (UINT8_MAX + 1)) + 1;
+		high   = (rand() % (UINT8_MAX + 1)) + 1;
+		opcode = 0;
+		cpu.write_memory(cpu.get_PC(), opcode);
+		cpu.write_memory(cpu.get_PC() + 1, low);
+		cpu.write_memory(cpu.get_PC() + 2, high);
+	};
+
+	~CPU_instructin_fixture() {
+
+	};
+};
+
 BOOST_FIXTURE_TEST_SUITE(Load_and_store, CPU_fixture)
 
-BOOST_AUTO_TEST_CASE(lda_test)
+BOOST_AUTO_TEST_CASE(lda_from_memory_test)
 {
-	cpu.lda(address);
+	cpu.lda(address, true);
 	BOOST_CHECK(cpu.get_A() == value);
 	BOOST_CHECK(cpu.is_Z() == (value == 0));
 	BOOST_CHECK(cpu.is_N() == ((int8_t)value < 0));
 }
 
-BOOST_AUTO_TEST_CASE(ldx_test)
+BOOST_AUTO_TEST_CASE(lda_from_value_test)
 {
-	cpu.ldx(address);
+	cpu.lda(value, false);
+	BOOST_CHECK(cpu.get_A() == value);
+	BOOST_CHECK(cpu.is_Z() == (value == 0));
+	BOOST_CHECK(cpu.is_N() == ((int8_t)value < 0));
+}
+
+BOOST_AUTO_TEST_CASE(ldx_from_memory_test)
+{
+	cpu.ldx(address, true);
 	BOOST_CHECK(cpu.get_X() == value);
 	BOOST_CHECK(cpu.is_Z() == (value == 0));
 	BOOST_CHECK(cpu.is_N() == ((int8_t)value < 0));
 }
 
-BOOST_AUTO_TEST_CASE(ldy_test)
+BOOST_AUTO_TEST_CASE(ldx_from_value_test)
 {
-	cpu.ldy(address);
+	cpu.ldx(value, false);
+	BOOST_CHECK(cpu.get_X() == value);
+	BOOST_CHECK(cpu.is_Z() == (value == 0));
+	BOOST_CHECK(cpu.is_N() == ((int8_t)value < 0));
+}
+
+BOOST_AUTO_TEST_CASE(ldy_from_memory_test)
+{
+	cpu.ldy(address, true);
+	BOOST_CHECK(cpu.get_Y() == value);
+	BOOST_CHECK(cpu.is_Z() == (value == 0));
+	BOOST_CHECK(cpu.is_N() == ((int8_t)value < 0));
+}
+
+BOOST_AUTO_TEST_CASE(ldy_from_value_test)
+{
+	cpu.ldy(value, false);
 	BOOST_CHECK(cpu.get_Y() == value);
 	BOOST_CHECK(cpu.is_Z() == (value == 0));
 	BOOST_CHECK(cpu.is_N() == ((int8_t)value < 0));
@@ -219,10 +264,10 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(Logical, CPU_fixture)
 
-BOOST_AUTO_TEST_CASE(and_test)
+BOOST_AUTO_TEST_CASE(and_from_memory_test)
 {
 	cpu.set_A(value_2);
-	cpu._and(address);
+	cpu._and(address, true);
 	BOOST_CHECK(cpu.get_A() == (value_2 & value));
 	if ((value_2 & value) == 0) {
 		BOOST_CHECK(cpu.is_Z());
@@ -236,10 +281,19 @@ BOOST_AUTO_TEST_CASE(and_test)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(ora_test)
+BOOST_AUTO_TEST_CASE(and_from_value_test)
 {
 	cpu.set_A(value_2);
-	cpu.ora(address);
+	cpu._and(value, false);
+	BOOST_CHECK(cpu.get_A() == (value_2 & value));
+	BOOST_CHECK(cpu.is_Z() == ((value_2 & value) == 0));
+	BOOST_CHECK(cpu.is_N() == (((int8_t)(value_2 & value)) < 0) );
+}
+
+BOOST_AUTO_TEST_CASE(ora_from_memory_test)
+{
+	cpu.set_A(value_2);
+	cpu.ora(address, true);
 	BOOST_CHECK(cpu.get_A() == (value_2 | value));
 	if ((value_2 | value) == 0) {
 		BOOST_CHECK(cpu.is_Z());
@@ -253,10 +307,19 @@ BOOST_AUTO_TEST_CASE(ora_test)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(eor_test)
+BOOST_AUTO_TEST_CASE(ora_from_value_test)
 {
 	cpu.set_A(value_2);
-	cpu.eor(address);
+	cpu.ora(value, false);
+	BOOST_CHECK(cpu.get_A() == (value_2 | value));
+	BOOST_CHECK(cpu.is_Z() == ((value_2 | value) == 0));
+	BOOST_CHECK(cpu.is_N() == ((int8_t)(value_2 | value) < 0));
+}
+
+BOOST_AUTO_TEST_CASE(eor_from_memory_test)
+{
+	cpu.set_A(value_2);
+	cpu.eor(address, true);
 	BOOST_CHECK(cpu.get_A() == (value_2 ^ value));
 	if ((value_2 ^ value) == 0) {
 		BOOST_CHECK(cpu.is_Z());
@@ -270,6 +333,15 @@ BOOST_AUTO_TEST_CASE(eor_test)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(eor_from_value_test)
+{
+	cpu.set_A(value_2);
+	cpu.eor(value, false);
+	BOOST_CHECK(cpu.get_A() == (value_2 ^value));
+	BOOST_CHECK(cpu.is_Z() == ((value_2 ^value) == 0));
+	BOOST_CHECK(cpu.is_N() == (((int8_t)(value_2 ^ value)) < 0));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(Jump_branch_compare_test, CPU_fixture)
@@ -280,24 +352,38 @@ BOOST_AUTO_TEST_CASE(jmp_test)
 	BOOST_CHECK(cpu.get_PC() == address);
 }
 
-BOOST_AUTO_TEST_CASE(cmp_with_carry_test)
+BOOST_AUTO_TEST_CASE(cmp_from_memory_with_carry_test)
 {
 	cpu.set_A(value + 1);
-	cpu.cmp(address);
+	cpu.cmp(address, true);
 	BOOST_CHECK(cpu.is_C());
 }
 
-BOOST_AUTO_TEST_CASE(cmp_without_carry_test)
+BOOST_AUTO_TEST_CASE(cmp_from_value_carry_test)
+{
+	cpu.set_A(value + 1);
+	cpu.cmp(value, false);
+	BOOST_CHECK(cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cmp_from_memory_without_carry_test)
 {
 	cpu.set_A(value - 1);
-	cpu.cmp(address);
+	cpu.cmp(address, true);
 	BOOST_CHECK(!cpu.is_C());
 }
 
-BOOST_AUTO_TEST_CASE(cmp_test)
+BOOST_AUTO_TEST_CASE(cmp_from_value_without_carry_test)
+{
+	cpu.set_A(value - 1);
+	cpu.cmp(value, false);
+	BOOST_CHECK(!cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cmp_from_memory_test)
 {
 	cpu.set_A(value_2);
-	cpu.cmp(address);
+	cpu.cmp(address, true);
 	if (value_2 >= value) {
 		BOOST_CHECK(cpu.is_C());
 	} else {
@@ -315,24 +401,47 @@ BOOST_AUTO_TEST_CASE(cmp_test)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(cpx_with_carry_test)
+BOOST_AUTO_TEST_CASE(cmp_from_value_test)
+{
+	cpu.set_A(value_2);
+	cpu.cmp(value, false);
+	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
+	BOOST_CHECK(cpu.is_Z() == (value_2 - value == 0));
+	BOOST_CHECK(cpu.is_N() == (int8_t)(value_2 - value < 0));
+}
+
+BOOST_AUTO_TEST_CASE(cpx_from_memory_with_carry_test)
 {
 	cpu.set_X(value + 1);
-	cpu.cpx(address);
+	cpu.cpx(address, true);
+	BOOST_CHECK(cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpx_from_value_with_carry_test)
+{
+	cpu.set_X(value + 1);
+	cpu.cpx(value, false);
 	BOOST_CHECK(cpu.is_C());
 }
 
 BOOST_AUTO_TEST_CASE(cpx_without_carry_test)
 {
 	cpu.set_X(value - 1);
-	cpu.cpx(address);
+	cpu.cpx(address, true);
 	BOOST_CHECK(!cpu.is_C());
 }
 
-BOOST_AUTO_TEST_CASE(cpx_test)
+BOOST_AUTO_TEST_CASE(cpx_from_value_without_carry_test)
+{
+	cpu.set_X(value - 1);
+	cpu.cpx(value, false);
+	BOOST_CHECK(!cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpx_from_memory_test)
 {
 	cpu.set_X(value_2);
-	cpu.cpx(address);
+	cpu.cpx(address, true);
 	if (value_2 >= value) {
 		BOOST_CHECK(cpu.is_C());
 	} else {
@@ -350,24 +459,47 @@ BOOST_AUTO_TEST_CASE(cpx_test)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(cpy_with_carry_test)
+BOOST_AUTO_TEST_CASE(cpx_from_value_test)
+{
+	cpu.set_X(value_2);
+	cpu.cpx(value, false);
+	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
+	BOOST_CHECK(cpu.is_Z() == (value_2 - value == 0));
+	BOOST_CHECK(cpu.is_N() == ((int8_t)(value_2 - value) < 0));
+}
+
+BOOST_AUTO_TEST_CASE(cpy_from_memory_with_carry_test)
 {
 	cpu.set_Y(value + 1);
-	cpu.cpy(address);
+	cpu.cpy(address, true);
 	BOOST_CHECK(cpu.is_C());
 }
 
-BOOST_AUTO_TEST_CASE(cpy_without_carry_test)
+BOOST_AUTO_TEST_CASE(cpy_from_value_with_carry_test)
+{
+	cpu.set_Y(value + 1);
+	cpu.cpy(value, false);
+	BOOST_CHECK(cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpy_from_memory_without_carry_test)
 {
 	cpu.set_Y(value - 1);
-	cpu.cpy(address);
+	cpu.cpy(address, true);
 	BOOST_CHECK(!cpu.is_C());
 }
 
-BOOST_AUTO_TEST_CASE(cpy_test)
+BOOST_AUTO_TEST_CASE(cpy_from_value_without_carry_test)
+{
+	cpu.set_Y(value - 1);
+	cpu.cpy(value, false);
+	BOOST_CHECK(!cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cpy_from_memory_test)
 {
 	cpu.set_Y(value_2);
-	cpu.cpy(address);
+	cpu.cpy(address, true);
 	if (value_2 >= value) {
 		BOOST_CHECK(cpu.is_C());
 	} else {
@@ -383,6 +515,15 @@ BOOST_AUTO_TEST_CASE(cpy_test)
 	} else {
 		BOOST_CHECK(!cpu.is_N());
 	}
+}
+
+BOOST_AUTO_TEST_CASE(cpy_from_value_test)
+{
+	cpu.set_Y(value_2);
+	cpu.cpy(value, false);
+	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
+	BOOST_CHECK(cpu.is_Z() == ((value_2 - value) == 0));
+	BOOST_CHECK(cpu.is_N() == (((int8_t)(value_2 - value)) < 0));
 }
 
 BOOST_AUTO_TEST_CASE(bcc_with_carry_test)
@@ -740,3 +881,15 @@ BOOST_AUTO_TEST_CASE(rti_test)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_FIXTURE_TEST_SUITE(CPU_execution_test, CPU_fixture)
+
+BOOST_AUTO_TEST_CASE(bcc_call_test)
+{
+	cpu.write_memory(cpu.get_PC(), 0x29);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
