@@ -8,67 +8,106 @@ using namespace std;
 CPU::CPU()
 {
 	SP = STACK_END_OFFSET;
+	PS = STATUS_REGISTER_POWER_UP_STATE;
+	PC = 0;
+	A  = 0;
+	X  = 0;
+	Y  = 0;
 }
 
 uint8_t CPU::memory[MEM_SIZE];
 
 const unsigned char CPU::instruction_length[MAX_BYTE_VAL] = {
-		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-		3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-		1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0,
-		2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-		2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	};
+	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0,
+	2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+};
 
 const unsigned char CPU::execution_time[MAX_BYTE_VAL] = {
-		7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
-		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-		6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
-		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-		6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
-		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-		6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
-		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-		2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
-		2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
-		2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
-		2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
-		2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
-		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-		2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
-		2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-	};
+	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+	2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+	2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+};
 
 const unsigned char CPU::opcode_addressing_mode[MAX_BYTE_VAL] = {
-		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-		1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-		6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 8, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
-		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
-		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-		5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
-		10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-	};
+	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 8, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
+	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
+};
 
+const string CPU::instruction_names[MAX_BYTE_VAL] = {
+	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
+	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"JSR", "AND", "KIL", "RLA", "BIT", "AND", "ROL", "RLA",
+	"PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
+	"BMI", "AND", "KIL", "RLA", "NOP", "AND", "ROL", "RLA",
+	"SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
+	"RTI", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "SRE",
+	"BVC", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"RTS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
+	"BVS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX",
+	"DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "SAX",
+	"BCC", "STA", "KIL", "AHX", "STY", "STA", "STX", "SAX",
+	"TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
+	"LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"BCS", "LDA", "KIL", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
+	"CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP",
+	"INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
+	"BNE", "CMP", "KIL", "DCP", "NOP", "CMP", "DEC", "DCP",
+	"CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
+	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC",
+	"INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
+	"BEQ", "SBC", "KIL", "ISC", "NOP", "SBC", "INC", "ISC",
+	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
+};
 
 // Load and store
 
@@ -771,14 +810,30 @@ void CPU::print_state()
 
 inline uint8_t CPU::rot_r(uint8_t value)
 {
-	// cout << bitset<8>(value) << " == " << bitset<8>((value << 7) | (value >> 1)) << endl;
 	return (value << 7) | (value >> 1);
 }
 
 inline uint8_t CPU::rot_l(uint8_t value)
 {
-	// cout << bitset<8>(value) << " == " << bitset<8>((value >> 7) | (value << 1)) << endl;
 	return (value >> 7) | (value << 1);
+}
+
+/*
+ * UNFINISHED
+ */
+void CPU::execute_instruction() 
+{
+	uint8_t opcode = read_memory(PC++);
+	uint8_t low = 0;
+	uint8_t high = 0;
+	if (instruction_length[opcode] == 2) {
+		low = read_memory(PC++);
+	} else if (instruction_length[opcode] == 3){
+		low = read_memory(PC++);
+		high = read_memory(PC++);
+	}
+	uint16_t address = resolve_operand(opcode, high, low);
+	execute(opcode, address);
 }
 
 // Functions strictly for testing purposes
@@ -902,3 +957,344 @@ void CPU::set_PS(uint8_t val)
 {
 	PS = val;
 }
+
+/*
+ * Calls the proper instruction depending on the opcpde. 
+ * Even when an 8-bit value is expected the function should work properly
+ * by using the 16-bit address value. Typecasting ensures that the lower 8 bits
+ * are passed the the function.
+ */
+std::string CPU::execute(uint8_t opcode, uint16_t address)
+{
+	switch(opcode) {
+		// ADC
+		case ADC_IMMEDIATE: case ADC_ZERO_PAGE:case ADC_ZERO_PAGE_X: 
+		case ADC_ABSOLUTE: case ADC_ABSOLUTE_X: case ADC_ABSOLUTE_Y:
+		case ADC_INDIRECT_X: case ADC_INDIRECT_Y:
+		adc(address);
+		break;
+
+		// AND
+		case AND_IMMEDIATE: case AND_ZERO_PAGE: case AND_ZERO_PAGE_X:
+		case AND_ABSOLUTE: case AND_ABSOLUTE_X: case AND_ABSOLUTE_Y:
+		case AND_INDIRECT_X: case AND_INDIRECT_Y:
+		_and(address);
+		break;
+
+		// ASL - A
+		case ASL_ACCUMULATOR:
+		asl(0, false);
+		break;
+
+		// ASL - Memory
+		case ASL_ZERO_PAGE: case ASL_ZERO_PAGE_X: case ASL_ABSOLUTE:
+		case ASL_ABSOLUTE_X:
+		asl(address, true);
+		break;
+
+		//BCC
+		case BCC:
+		bcc(address);
+		break;
+
+		// BCS
+		case BCS:
+		bcs(address);
+		break;
+
+		// BEQ
+		case BEQ:
+		beq(address);
+		break;
+
+		// BIT
+		case BIT_ZERO_PAGE: case BIT_ABSOLUTE:
+		bit(address);
+		break;
+
+		// BMI
+		case BMI:
+		bmi(address);
+		break;
+
+		// BNE
+		case BNE:
+		bne(address);
+		break;
+
+		// BPL
+		case BPL:
+		bpl(address);
+		break;
+
+		// BRK
+		case BRK:
+		brk();
+		break;
+
+		// BVC
+		case BVC:
+		bvc(address);
+		break;
+
+		// BVS
+		case BVS:
+		bvs(address);
+		break;
+
+		// CLC
+		case CLC:
+		clc();
+		break;
+
+		// CLD
+		case CLD:
+		cld();
+		break;
+
+		// CLI
+		case CLI:
+		cli();
+		break;
+
+		// CLV
+		case CLV:
+		clv();
+		break;
+
+		// CMP
+		case CMP_IMMEDIATE: case CMP_ZERO_PAGE: case CMP_ZERO_PAGE_X:
+		case CMP_ABSOLUTE: case CMP_ABSOLUTE_X: case CMP_ABSOLUTE_Y:
+		case CMP_INDIRECT_X: case CMP_INDIRECT_Y:
+		cmp(address);
+		break;
+
+		// CPX
+		case CPX_IMMEDIATE: case CPX_ZERO_PAGE: case CPX_ABSOLUTE:
+		cpx(address);
+		break;
+
+		// CPY
+		case CPY_IMMEDIATE: case CPY_ZERO_PAGE: case CPY_ABSOLUTE:
+		cpy(address);
+		break;
+
+		// DEC
+		case DEC_ZERO_PAGE: case DEC_ZERO_PAGE_X: case DEC_ABSOLUTE:
+		case DEC_ABSOLUTE_X:
+		dec(address);
+		break;
+
+		// DEX
+		case DEX:
+		dex();
+		break;
+
+		// DEY
+		case DEY:
+		dey();
+		break;
+
+		// EOR
+		case EOR_IMMEDIATE: case EOR_ZERO_PAGE: case EOR_ZERO_PAGE_X:
+		case EOR_ABSOLUTE: case EOR_ABSOLUTE_X: case EOR_ABSOLUTE_Y:
+		case EOR_INDIRECT_X: case EOR_INDIRECT_Y:
+		eor(address);
+		break;
+
+		// INC
+		case INC_ZERO_PAGE: case INC_ZERO_PAGE_X: case INC_ABSOLUTE:
+		case INC_ABSOLUTE_X:
+		inc(address);
+		break;
+
+		// INX
+		case INX:
+		inx();
+		break;
+
+		// INY
+		case INY:
+		iny();
+		break;
+
+		// JMP
+		case JMP_ABSOLUTE: case JMP_INDIRECT:
+		jmp(address);
+		break;
+
+		// JSR
+		case JSR:
+		jsr(address);
+		break;
+
+		// LDA
+		case LDA_IMMEDIATE: case LDA_ZERO_PAGE: case LDA_ZERO_PAGE_X:
+		case LDA_ABSOLUTE: case LDA_ABSOLUTE_X: case LDA_ABSOLUTE_Y:
+		case LDA_INDIRECT_X: case LDA_INDIRECT_Y:
+		lda(address);
+		break;
+
+		// LDX
+		case LDX_IMMEDIATE: case LDX_ZERO_PAGE: case LDX_ZERO_PAGE_Y:
+		case LDX_ABSOLUTE: case LDX_ABSOLUTE_X:
+		ldx(address);
+		break;
+
+		// LDY
+		case LDY_IMMEDIATE: case LDY_ZERO_PAGE: case LDY_ZERO_PAGE_X:
+		case LDY_ABSOLUTE: case LDY_ABSOLUTE_X:
+		ldy(address);
+		break;
+
+		// LSR - A
+		case LSR_ACCUMULATOR:
+		lsr(0, false);
+		break;
+
+		// LSR - Memory
+		case LSR_ZERO_PAGE: case LSR_ZERO_PAGE_X: case LSR_ABSOLUTE:
+		case LSR_ABSOLUTE_X:
+		lsr(address, true);
+		break;
+
+		// NOP
+		case NOP:
+		nop();
+		break;
+
+		// ORA
+		case ORA_IMMEDIATE: case ORA_ZERO_PAGE: case ORA_ZERO_PAGE_X:
+		case ORA_ABSOLUTE: case ORA_ABSOLUTE_X: case ORA_ABSOLUTE_Y:
+		case ORA_INDIRECT_X: case ORA_INDIRECT_Y:
+		ora(address);
+		break;
+
+		// PHA
+		case PHA:
+		break;
+
+		// PHP
+		case PHP:
+		php();
+		break;
+
+		// PLA
+		case PLA:
+		pla();
+		break;
+
+		// PLP
+		case PLP:
+		plp();
+		break;
+
+		// ROL - A
+		case ROL_ACCUMULATOR:
+		rol(address, false);
+		break;
+
+		// ROL - Memory
+		case ROL_ZERO_PAGE: case ROL_ZERO_PAGE_X: case ROL_ABSOLUTE:
+		case ROL_ABSOLUTE_X:
+		rol(address, true);
+		break;
+
+		// ROR - A
+		case ROR_ACCUMULATOR:
+		ror(address, false);
+		break;
+
+		// ROR - Memory
+		case ROR_ZERO_PAGE: case ROR_ZERO_PAGE_X: case ROR_ABSOLUTE:
+		case ROR_ABSOLUTE_X:
+		ror(address, true);
+		break;
+
+		// RTI
+		case RTI:
+		rti();
+		break;
+
+		// RTS
+		case RTS:
+		rts();
+		break;
+
+		// SBC
+		case SBC_IMMEDIATE: case SBC_ZERO_PAGE: case SBC_ZERO_PAGE_X:
+		case SBC_ABSOLUTE: case SBC_ABSOLUTE_X: case SBC_ABSOLUTE_Y:
+		case SBC_INDIRECT_X: case SBC_INDIRECT_Y:
+		sbc(address);
+		break;
+
+		// SEC
+		case SEC:
+		sec();
+		break;
+
+		// SED
+		case SED:
+		sed();
+		break;
+
+		// SEI
+		case SEI:
+		sei();
+		break;
+
+		// STA
+		case STA_ZERO_PAGE: case STA_ZERO_PAGE_X: case STA_ABSOLUTE:
+		case STA_ABSOLUTE_X: case STA_ABSOLUTE_Y: case STA_INDIRECT_X:
+		case STA_INDIRECT_Y:
+		sta(address);
+		break;
+
+		// STX
+		case STX_ZERO_PAGE: case STX_ZERO_PAGE_Y: case STX_ABSOLUTE:
+		stx(address);
+		break;
+
+		// STY
+		case STY_ZERO_PAGE: case STY_ZERO_PAGE_X: case STY_ABSOLUTE:
+		sty(address);
+		break;
+
+		// TAX
+		case TAX:
+		tax();
+		break;
+
+		// TAY
+		case TAY:
+		tay();
+		break;
+
+		// TSX
+		case TSX:
+		tsx();
+		break;
+
+		// TXA
+		case TXA:
+		txa();
+		break;
+
+		// TXS
+		case TXS:
+		txs();
+		break;
+
+		// TYA
+		case TYA:
+		tya();
+		break;
+
+		default:
+		cerr << "Unsupported instruction called: " << hex << "0x" << opcode << endl;
+		break;
+	}
+
+	return instruction_names[opcode];
+}
+

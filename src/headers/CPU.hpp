@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <stdint.h>
+#include "Constants_opcodes.hpp"
 
 #define MEM_SIZE 65536
 #define MAX_BYTE_VAL 256
@@ -20,6 +21,7 @@
 
 #define STACK_START 0x01FF
 #define STACK_END_OFFSET 0xFF
+#define STATUS_REGISTER_POWER_UP_STATE 0x34
 
 #define INTERRUPT_VECTOR 0xFFFE
 
@@ -49,39 +51,39 @@ public:
 
 	uint8_t read_memory(uint16_t); // Should be private and inline
 	void write_memory(uint16_t, uint8_t); // Should be private and inline
-	int resolve_operand(int, int); // should be private
+	uint16_t resolve_operand(int, uint8_t, uint8_t); // should be private
 
 	// Load and store
-	void lda(uint16_t); 	// Load A with value at memory location
-	void ldx(uint16_t); 	// Load X with value at memory location
-	void ldy(uint16_t); 	// Load Y with value at memory location
-	void sta(uint16_t); 	// Store A at memory location
-	void stx(uint16_t); 	// Store X at memory location
-	void sty(uint16_t); 	// Store Y at memory location
+	void lda(uint16_t); // Load A with value at memory location
+	void ldx(uint16_t); // Load X with value at memory location
+	void ldy(uint16_t); // Load Y with value at memory location
+	void sta(uint16_t); // Store A at memory location
+	void stx(uint16_t); // Store X at memory location
+	void sty(uint16_t); // Store Y at memory location
 
 	// Arithmetic
-	void adc(uint16_t); 	// Add to A with carry bit
-	void sbc(uint16_t); 	// Subtract from A with carry bit
+	void adc(uint16_t); // Add to A with carry bit
+	void sbc(uint16_t); // Subtract from A with carry bit
 
 	// Increment and decrement
-	void inc(uint16_t); 	// Increment value at memory location
-	void inx(); 	// Increment X
-	void iny(); 	// Increment Y
-	void dec(uint16_t); 	// Decrement value at memory location
-	void dex(); 	// Decrement X
-	void dey(); 	// Decrement Y
+	void inc(uint16_t); // Increment value at memory location
+	void inx(); 		// Increment X
+	void iny(); 		// Increment Y
+	void dec(uint16_t); // Decrement value at memory location
+	void dex(); 		// Decrement X
+	void dey(); 		// Decrement Y
 
 	// Logical
-	void _and(uint16_t); // AND value at memory location with A
-	void ora(uint16_t); 	// OR value at memory location with A
-	void eor(uint16_t); 	// XOR value at memory location with A
+	void _and(uint16_t);// AND value at memory location with A
+	void ora(uint16_t); // OR value at memory location with A
+	void eor(uint16_t); // XOR value at memory location with A
 
 	// Jump, branch, compare and test
-	void jmp(uint16_t);  // Jump to address
-	void cmp(uint16_t);  // Compare value at memory location with A
-	void cpx(uint16_t);  // Compare value at memory location with X
-	void cpy(uint16_t);  // Compare value at memory location with Y
-	void bcc(uint8_t);  // Branch if C = 0
+	void jmp(uint16_t); // Jump to address
+	void cmp(uint16_t); // Compare value at memory location with A
+	void cpx(uint16_t); // Compare value at memory location with X
+	void cpy(uint16_t); // Compare value at memory location with Y
+	void bcc(uint8_t);	// Branch if C = 0
 	void bcs(uint8_t);  // Branch if C = 1
 	void beq(uint8_t);  // Branch if Z = 1
 	void bne(uint8_t);  // Branch if Z = 0
@@ -92,42 +94,42 @@ public:
 	void bit(uint16_t);  // Tests bits of value with A, sets flags only
 
 	// Shift and rotate
-	void asl(uint16_t, bool); 	// Shift A left 1 bit
-	void lsr(uint16_t, bool); 	// Shift A right 1 bit
-	void rol(uint16_t, bool); 	// Rotate A left 1 bit
-	void ror(uint16_t, bool); 	// Rotate A right 1 bit
+	void asl(uint16_t, bool); // Shift A left 1 bit
+	void lsr(uint16_t, bool); // Shift A right 1 bit
+	void rol(uint16_t, bool); // Rotate A left 1 bit
+	void ror(uint16_t, bool); // Rotate A right 1 bit
 
 	// Transfer
-	void tax(); 	// Move A to X
-	void tay(); 	// Move A to Y
-	void txa(); 	// Move X to A
-	void tya(); 	// Move Y to A
+	void tax(); // Move A to X
+	void tay(); // Move A to Y
+	void txa(); // Move X to A
+	void tya(); // Move Y to A
 
 	// Stack
-	void tsx(); 	// Move stack pointer to X
-	void txs(); 	// Move X to stack pointer
-	void pha(); 	// Push A onto stack
-	void php(); 	// Pulls A from stack
-	void plp(); 	// Pulls PS from stack
-	void pla();		// Pulls A from stack
+	void tsx(); // Move stack pointer to X
+	void txs(); // Move X to stack pointer
+	void pha(); // Push A onto stack
+	void php(); // Pulls A from stack
+	void plp(); // Pulls PS from stack
+	void pla();	// Pulls A from stack
 
 	// Subroutine
-	void jsr(uint16_t); 	// Jump to subroutine
-	void rts(); 	// Return from subroutine
-	void rti(); 	// Return from interrupt
+	void jsr(uint16_t); // Jump to subroutine
+	void rts(); 		// Return from subroutine
+	void rti(); 		// Return from interrupt
 
 	// Set and reset
-	void clc(); 	// Clear C flag
-	void cld(); 	// Clear D mode
-	void cli(); 	// Clear I
-	void clv(); 	// Clear V
-	void sec(); 	// Set C
-	void sed(); 	// Set D
-	void sei(); 	// Set I
+	void clc(); // Clear C flag
+	void cld(); // Clear D mode
+	void cli(); // Clear I
+	void clv(); // Clear V
+	void sec(); // Set C
+	void sed(); // Set D
+	void sei(); // Set I
 
 	// NOP and BRK
-	void nop(); 	// No operation
-	void brk(); 	// Break
+	void nop(); // No operation
+	void brk(); // Break
 
 	// Utils
 	void set_Z_flag(uint8_t);
@@ -170,6 +172,7 @@ public:
 
 	static uint8_t rot_l(uint8_t);
 	static uint8_t rot_r(uint8_t);
+	void execute_instruction();
 
 protected:
 
@@ -199,6 +202,8 @@ private:
 	// How long each instruction takes to execute
 	static const unsigned char execution_time[];
 	static const unsigned char opcode_addressing_mode[];
+	static const std::string instruction_names[];
+	void execute(uint8_t, uint16_t);
 
 };
 
