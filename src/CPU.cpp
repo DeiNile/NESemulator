@@ -111,23 +111,35 @@ const string CPU::instruction_names[MAX_BYTE_VAL] = {
 
 // Load and store
 
-void CPU::lda(uint16_t address)
+void CPU::lda(uint16_t address, bool read_from_memory)
 {
-	A = read_memory(address);
+	if (read_from_memory) {
+		A = read_memory(address);
+	} else {
+		A = address;
+	}
 	set_Z_flag(A);
 	set_N_flag(A);
 }
 
-void CPU::ldx(uint16_t address)
+void CPU::ldx(uint16_t address, bool read_from_memory)
 {
-	X = read_memory(address);
+	if (read_from_memory) {
+		X = read_memory(address);
+	} else {
+		X = address;
+	}
 	set_Z_flag(X);
 	set_N_flag(X);
 }
 
-void CPU::ldy(uint16_t address)
+void CPU::ldy(uint16_t address, bool read_from_memory)
 {
-	Y = read_memory(address);
+	if (read_from_memory) {
+		Y = read_memory(address);
+	} else {
+		Y = address;
+	}
 	set_Z_flag(Y);
 	set_N_flag(Y);
 }
@@ -149,10 +161,15 @@ void CPU::sty(uint16_t memory_address)
 
 // Arithmetic
 
-void CPU::adc(uint16_t address)
+void CPU::adc(uint16_t address, bool read_from_memory)
 {
 	uint8_t prev_A = A;
-	uint8_t val = read_memory(address);
+	uint8_t val;
+	if (read_from_memory) {
+		val = read_memory(address);
+	} else {
+		val = address;
+	}
 	uint8_t sum;
 	if ((sum = val + prev_A + C_flag) > UINT8_MAX) {
 		sec();
@@ -167,13 +184,18 @@ void CPU::adc(uint16_t address)
 	}
 	A = sum;
 	set_Z_flag(A);
-	set_N_flag(A);	
+	set_N_flag(A);
 }
 
-void CPU::sbc(uint16_t address)
+void CPU::sbc(uint16_t address, bool read_from_memory)
 {
 	uint8_t prev_A = A;
-	uint8_t val = read_memory(address);
+	uint8_t val;
+	if (read_from_memory) {
+		val = read_memory(address);
+	} else {
+		val = address;
+	}
 	int sum = val - prev_A - !C_flag;
 	if (sum > INT8_MAX || sum < INT8_MIN) {
 		V_flag = true;
@@ -240,23 +262,35 @@ void CPU::dey()
 
 // Logical
 
-void CPU::_and(uint16_t address)
+void CPU::_and(uint16_t address, bool read_from_memory)
 {
-	A &= read_memory(address);
+	if (read_from_memory) {
+		A &= read_memory(address);
+	} else {
+		A &= address;
+	}
 	set_Z_flag(A);
 	set_N_flag(A);
 }
 
-void CPU::ora(uint16_t address) 
+void CPU::ora(uint16_t address, bool read_from_memory) 
 {
-	A |= read_memory(address);
+	if (read_from_memory) {
+		A |= read_memory(address);
+	} else {
+		A |= address;
+	}
 	set_Z_flag(A);
 	set_N_flag(A);
 }
 
-void CPU::eor(uint16_t address)
+void CPU::eor(uint16_t address, bool read_from_memory)
 {
-	A ^= read_memory(address);
+	if (read_from_memory) {
+		A ^= read_memory(address);
+	} else {
+		A ^= (uint8_t)address;
+	}
 	set_Z_flag(A);
 	set_N_flag(A);
 }
@@ -269,9 +303,14 @@ void CPU::jmp(uint16_t address)
 	PC = address;
 }
 
-void CPU::cmp(uint16_t address)
+void CPU::cmp(uint16_t address, bool read_from_memory)
 {
-	uint8_t mem = read_memory(address);
+	uint8_t mem;
+	if (read_from_memory) {
+		mem = read_memory(address);	
+	} else {
+		mem = address;
+	}
 	uint8_t val = A - mem;
 	if (A >= mem) {
 		sec();
@@ -282,9 +321,14 @@ void CPU::cmp(uint16_t address)
 	set_N_flag(val);
 }
 
-void CPU::cpx(uint16_t address) 
+void CPU::cpx(uint16_t address, bool read_from_memory) 
 {
-	uint8_t mem = read_memory(address);
+	uint8_t mem; 
+	if (read_from_memory) {
+		mem = read_memory(address);
+	} else {
+		mem = address;
+	}
 	uint8_t val = X - mem;
 	if (X >= mem) {
 		sec();
@@ -295,9 +339,14 @@ void CPU::cpx(uint16_t address)
 	set_N_flag(val);
 }
 
-void CPU::cpy(uint16_t address)
+void CPU::cpy(uint16_t address, bool read_from_memory)
 {
-	uint8_t mem = read_memory(address);
+	uint8_t mem;
+	if (read_from_memory) {
+		mem = read_memory(address);
+	} else {
+		mem = address;
+	}
 	uint8_t val = Y - mem;
 	if (Y >= mem) {
 		sec();
@@ -406,7 +455,7 @@ void CPU::lsr(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
 		int mem_val = read_memory(address);
-		if ((mem_val & BYTE_SIGN_UNSET_MAX) == 0) {
+		if ((mem_val & 1) == 0) {
 			C_flag = false;
 		} else {
 			C_flag = true;
@@ -416,7 +465,7 @@ void CPU::lsr(uint16_t address, bool read_from_memory)
 		set_N_flag(mem_val);
 		write_memory(address, mem_val);
 	} else {
-		if ((A & BYTE_SIGN_UNSET_MAX) == 0) {
+		if ((A & 1) == 0) {
 			C_flag = false;
 		} else {
 			C_flag = true;
@@ -964,21 +1013,29 @@ void CPU::set_PS(uint8_t val)
  * by using the 16-bit address value. Typecasting ensures that the lower 8 bits
  * are passed the the function.
  */
-std::string CPU::execute(uint8_t opcode, uint16_t address)
+void CPU::execute(uint8_t opcode, uint16_t address)
 {
 	switch(opcode) {
 		// ADC
-		case ADC_IMMEDIATE: case ADC_ZERO_PAGE:case ADC_ZERO_PAGE_X: 
+		case ADC_IMMEDIATE: 
+		adc(address, false);
+		break;
+
+		case ADC_ZERO_PAGE:case ADC_ZERO_PAGE_X: 
 		case ADC_ABSOLUTE: case ADC_ABSOLUTE_X: case ADC_ABSOLUTE_Y:
 		case ADC_INDIRECT_X: case ADC_INDIRECT_Y:
-		adc(address);
+		adc(address, true);
 		break;
 
 		// AND
-		case AND_IMMEDIATE: case AND_ZERO_PAGE: case AND_ZERO_PAGE_X:
+		case AND_IMMEDIATE: 
+		_and(address, false);
+		break;
+
+		case AND_ZERO_PAGE: case AND_ZERO_PAGE_X:
 		case AND_ABSOLUTE: case AND_ABSOLUTE_X: case AND_ABSOLUTE_Y:
 		case AND_INDIRECT_X: case AND_INDIRECT_Y:
-		_and(address);
+		_and(address, true);
 		break;
 
 		// ASL - A
@@ -1063,20 +1120,32 @@ std::string CPU::execute(uint8_t opcode, uint16_t address)
 		break;
 
 		// CMP
-		case CMP_IMMEDIATE: case CMP_ZERO_PAGE: case CMP_ZERO_PAGE_X:
+		case CMP_IMMEDIATE:
+		cmp(address, false);
+		break;
+
+		case CMP_ZERO_PAGE: case CMP_ZERO_PAGE_X:
 		case CMP_ABSOLUTE: case CMP_ABSOLUTE_X: case CMP_ABSOLUTE_Y:
 		case CMP_INDIRECT_X: case CMP_INDIRECT_Y:
-		cmp(address);
+		cmp(address, true);
 		break;
 
 		// CPX
-		case CPX_IMMEDIATE: case CPX_ZERO_PAGE: case CPX_ABSOLUTE:
-		cpx(address);
+		case CPX_IMMEDIATE: 
+		cpx(address, false);
+		break;
+
+		case CPX_ZERO_PAGE: case CPX_ABSOLUTE:
+		cpx(address, true);
 		break;
 
 		// CPY
-		case CPY_IMMEDIATE: case CPY_ZERO_PAGE: case CPY_ABSOLUTE:
-		cpy(address);
+		case CPY_IMMEDIATE: 
+		cpy(address, false);
+		break;
+
+		case CPY_ZERO_PAGE: case CPY_ABSOLUTE:
+		cpy(address, true);
 		break;
 
 		// DEC
@@ -1096,10 +1165,14 @@ std::string CPU::execute(uint8_t opcode, uint16_t address)
 		break;
 
 		// EOR
-		case EOR_IMMEDIATE: case EOR_ZERO_PAGE: case EOR_ZERO_PAGE_X:
+		case EOR_IMMEDIATE: 
+		eor(address, false);
+		break;
+
+		case EOR_ZERO_PAGE: case EOR_ZERO_PAGE_X:
 		case EOR_ABSOLUTE: case EOR_ABSOLUTE_X: case EOR_ABSOLUTE_Y:
 		case EOR_INDIRECT_X: case EOR_INDIRECT_Y:
-		eor(address);
+		eor(address, true);
 		break;
 
 		// INC
@@ -1129,22 +1202,34 @@ std::string CPU::execute(uint8_t opcode, uint16_t address)
 		break;
 
 		// LDA
-		case LDA_IMMEDIATE: case LDA_ZERO_PAGE: case LDA_ZERO_PAGE_X:
+		case LDA_IMMEDIATE: 
+		lda(address, false);
+		break;
+
+		case LDA_ZERO_PAGE: case LDA_ZERO_PAGE_X:
 		case LDA_ABSOLUTE: case LDA_ABSOLUTE_X: case LDA_ABSOLUTE_Y:
 		case LDA_INDIRECT_X: case LDA_INDIRECT_Y:
-		lda(address);
+		lda(address, true);
 		break;
 
 		// LDX
-		case LDX_IMMEDIATE: case LDX_ZERO_PAGE: case LDX_ZERO_PAGE_Y:
+		case LDX_IMMEDIATE: 
+		ldx(address, false);
+		break;
+
+		case LDX_ZERO_PAGE: case LDX_ZERO_PAGE_Y:
 		case LDX_ABSOLUTE: case LDX_ABSOLUTE_X:
-		ldx(address);
+		ldx(address, true);
 		break;
 
 		// LDY
-		case LDY_IMMEDIATE: case LDY_ZERO_PAGE: case LDY_ZERO_PAGE_X:
+		case LDY_IMMEDIATE:
+		ldy(address, false);
+		break;
+
+		case LDY_ZERO_PAGE: case LDY_ZERO_PAGE_X:
 		case LDY_ABSOLUTE: case LDY_ABSOLUTE_X:
-		ldy(address);
+		ldy(address, true);
 		break;
 
 		// LSR - A
@@ -1164,10 +1249,14 @@ std::string CPU::execute(uint8_t opcode, uint16_t address)
 		break;
 
 		// ORA
-		case ORA_IMMEDIATE: case ORA_ZERO_PAGE: case ORA_ZERO_PAGE_X:
+		case ORA_IMMEDIATE: 
+		ora(address, false);
+		break;
+
+		case ORA_ZERO_PAGE: case ORA_ZERO_PAGE_X:
 		case ORA_ABSOLUTE: case ORA_ABSOLUTE_X: case ORA_ABSOLUTE_Y:
 		case ORA_INDIRECT_X: case ORA_INDIRECT_Y:
-		ora(address);
+		ora(address, true);
 		break;
 
 		// PHA
@@ -1222,10 +1311,14 @@ std::string CPU::execute(uint8_t opcode, uint16_t address)
 		break;
 
 		// SBC
-		case SBC_IMMEDIATE: case SBC_ZERO_PAGE: case SBC_ZERO_PAGE_X:
+		case SBC_IMMEDIATE: 
+		sbc(address, false);
+		break;
+
+		case SBC_ZERO_PAGE: case SBC_ZERO_PAGE_X:
 		case SBC_ABSOLUTE: case SBC_ABSOLUTE_X: case SBC_ABSOLUTE_Y:
 		case SBC_INDIRECT_X: case SBC_INDIRECT_Y:
-		sbc(address);
+		sbc(address, true);
 		break;
 
 		// SEC
@@ -1294,7 +1387,5 @@ std::string CPU::execute(uint8_t opcode, uint16_t address)
 		cerr << "Unsupported instruction called: " << hex << "0x" << opcode << endl;
 		break;
 	}
-
-	return instruction_names[opcode];
 }
 

@@ -570,7 +570,7 @@ BOOST_AUTO_TEST_CASE(lsr_from_memory_test)
 	cpu.lsr(address, true);
 	uint8_t shift = (value >> 1) & BYTE_SIGN_UNSET_MAX;
 	BOOST_CHECK(cpu.read_memory(address) == shift);
-	BOOST_CHECK(cpu.is_C() == ((value & BYTE_SIGN_BIT_SET_MASK) != 0));
+	BOOST_CHECK(cpu.is_C() == ((value & 1) != 0));
 	BOOST_CHECK(cpu.is_Z() == (shift == 0));
 	BOOST_CHECK(cpu.is_N() == ((shift & BYTE_SIGN_BIT_SET_MASK) != 0));
 }
@@ -581,7 +581,7 @@ BOOST_AUTO_TEST_CASE(lsr_from_A_test)
 	cpu.lsr(address, false);
 	uint8_t shift = ((value >> 1) & BYTE_SIGN_UNSET_MAX);
 	BOOST_CHECK(cpu.get_A() == shift);
-	BOOST_CHECK(cpu.is_C() == ((value & BYTE_SIGN_BIT_SET_MASK) != 0));
+	BOOST_CHECK(cpu.is_C() == ((value & 1) != 0));
 	BOOST_CHECK(cpu.is_Z() == (shift == 0));
 	BOOST_CHECK(cpu.is_N() == ((shift & BYTE_SIGN_BIT_SET_MASK) != 0));
 }
