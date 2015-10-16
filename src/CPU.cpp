@@ -240,7 +240,7 @@ void CPU::iny()
 
 void CPU::dec(uint16_t address)
 {
-	int value = (read_memory(address) - 1) & UINT8_MAX;
+	uint8_t value = (read_memory(address) - 1) & UINT8_MAX;
 	write_memory(address, value);
 	set_Z_flag(value);
 	set_N_flag(value);
@@ -652,8 +652,9 @@ void CPU::nop()
 
 void CPU::brk()
 {
+	push((PC >> BYTE_LENGTH) & UINT8_MAX);
+	push(PC & UINT8_MAX);
 	B_flag = true;
-	push(PC);
 	push(PS);
 	PC = read_memory(INTERRUPT_VECTOR);
 	PC <<= BYTE_LENGTH;
@@ -682,7 +683,7 @@ uint16_t CPU::resolve_operand(int opcode, uint8_t high, uint8_t low)
 
 	switch(mode) {
 		case ABSOLUTE:
-			ret = read_memory(address);
+			ret = address;
 			break;
 
 		case ABSOLUTE_X:

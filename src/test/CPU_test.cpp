@@ -505,6 +505,17 @@ BOOST_AUTO_TEST_CASE(bpl_positive_test)
 	BOOST_CHECK(cpu.get_PC() == value + value_2);
 }
 
+BOOST_AUTO_TEST_CASE(brk_test)
+{
+	cpu.set_PC(address);
+	cpu.set_PS(value);
+	cpu.brk();
+	BOOST_CHECK(cpu.is_B());
+	BOOST_CHECK(cpu.pull() == value);
+	BOOST_CHECK(cpu.pull() == (uint8_t)address);
+	BOOST_CHECK(cpu.pull() == ((uint8_t)(address >> BYTE_LENGTH)));
+}
+
 BOOST_AUTO_TEST_CASE(bvs_with_overflow_test)
 {
 	cpu.set_V(true);
@@ -795,6 +806,265 @@ BOOST_AUTO_TEST_CASE(asl_accumulator_call_test)
 	cpu.execute_instruction();
 	BOOST_CHECK(cpu.get_A() == ((value << 1) & FE));
 }
+
+BOOST_AUTO_TEST_CASE(asl_memory_call_test)
+{
+	cpu.write_memory(pc, ASL_ABSOLUTE);
+	cpu.write_memory(address, value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.read_memory(address) == ((value << 1) & FE));
+}
+
+BOOST_AUTO_TEST_CASE(bcc_with_branching_call_test)
+{
+	cpu.write_memory(pc, BCC);
+	cpu.set_C(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(bcc_without_branching_call_test)
+{
+	cpu.write_memory(pc, BCC);
+	cpu.set_C(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));
+}
+
+BOOST_AUTO_TEST_CASE(bcs_with_branching_call_test)
+{
+	cpu.write_memory(pc, BCS);
+	cpu.set_C(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(bcs_without_branching_call_test)
+{
+	cpu.write_memory(pc, BCS);
+	cpu.set_C(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));
+}
+
+BOOST_AUTO_TEST_CASE(beq_with_branching_call_test)
+{
+	cpu.write_memory(pc, BEQ);
+	cpu.set_Z(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(beq_without_branching_call_test)
+{
+	cpu.write_memory(pc, BEQ);
+	cpu.set_Z(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));
+}
+
+BOOST_AUTO_TEST_CASE(bit_zero_page_call_test)
+{
+	cpu.write_memory(pc, BIT_ZERO_PAGE);
+	cpu.write_memory(low, value);
+	cpu.set_A(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 & value) == 0));
+	BOOST_CHECK(cpu.is_V() == (((value_2 & value) & (1 << 6)) != 0));
+	BOOST_CHECK(cpu.is_N() == (((value_2 & value) & (1 << 7)) != 0));
+}
+
+BOOST_AUTO_TEST_CASE(bit_absolute_call_test)
+{
+	cpu.write_memory(pc, BIT_ABSOLUTE);
+	cpu.write_memory(address, value);
+	cpu.set_A(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 & value) == 0));
+	BOOST_CHECK(cpu.is_V() == (((value_2 & value) & (1 << 6)) != 0));
+	BOOST_CHECK(cpu.is_N() == (((value_2 & value) & (1 << 7)) != 0));
+}
+
+BOOST_AUTO_TEST_CASE(bmi_with_branching_call_test)
+{
+	cpu.write_memory(pc, BMI);
+	cpu.set_N(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(bmi_without_branching_call_test)
+{
+	cpu.write_memory(pc, BMI);
+	cpu.set_N(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));
+}
+
+BOOST_AUTO_TEST_CASE(bne_with_branching_call_test)
+{
+	cpu.write_memory(pc, BNE);
+	cpu.set_Z(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(bne_without_branching_call_test)
+{
+	cpu.write_memory(pc, BNE);
+	cpu.set_Z(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));
+}
+
+BOOST_AUTO_TEST_CASE(bpl_with_branching_call_test)
+{
+	cpu.write_memory(pc, BPL);
+	cpu.set_N(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(bpl_without_branching_call_test)
+{
+	cpu.write_memory(pc, BPL);
+	cpu.set_N(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));
+}
+
+BOOST_AUTO_TEST_CASE(brk_call_test)
+{
+	cpu.write_memory(pc, BRK);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_B());
+}
+
+BOOST_AUTO_TEST_CASE(bvc_with_branching_call_test)
+{
+	cpu.write_memory(pc, BVC);
+	cpu.set_V(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(bvc_without_branching_call_test)
+{
+	cpu.write_memory(pc, BVC);
+	cpu.set_V(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));	
+}
+
+BOOST_AUTO_TEST_CASE(bvs_with_branching_call_test)
+{
+	cpu.write_memory(pc, BVS);
+	cpu.set_V(true);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
+}
+
+BOOST_AUTO_TEST_CASE(bvs_without_branching_call_test)
+{
+	cpu.write_memory(pc, BVS);
+	cpu.set_V(false);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == (pc + 2));
+}
+
+BOOST_AUTO_TEST_CASE(clc_call_test)
+{
+	cpu.write_memory(pc, CLC);
+	cpu.execute_instruction();
+	BOOST_CHECK(!cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(cld_call_test)
+{
+	cpu.write_memory(pc, CLD);
+	cpu.execute_instruction();
+	BOOST_CHECK(!cpu.is_D());
+}
+
+BOOST_AUTO_TEST_CASE(cli_call_test)
+{
+	cpu.write_memory(pc, CLI);
+	cpu.execute_instruction();
+	BOOST_CHECK(!cpu.is_I());
+}
+
+BOOST_AUTO_TEST_CASE(clv_call_test)
+{
+	cpu.write_memory(pc, CLV);
+	cpu.execute_instruction();
+	BOOST_CHECK(!cpu.is_V());
+}
+
+BOOST_AUTO_TEST_CASE(cmp_immediate_call_test)
+{
+	cpu.write_memory(pc, CMP_IMMEDIATE);
+	cpu.set_A(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 - low) == 0));
+	BOOST_CHECK(cpu.is_C() == (value_2 >= low));
+}
+
+BOOST_AUTO_TEST_CASE(cmp_zero_page_call_test)
+{
+	cpu.write_memory(pc, CMP_ZERO_PAGE);
+	cpu.write_memory(low, value);
+	cpu.set_A(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 - value) == 0));
+	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
+}
+
+BOOST_AUTO_TEST_CASE(cpx_immediate_call_test)
+{
+	cpu.write_memory(pc, CPX_IMMEDIATE);
+	cpu.set_X(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 - low) == 0));
+	BOOST_CHECK(cpu.is_C() == (value_2 >= low));
+}
+
+BOOST_AUTO_TEST_CASE(cpx_zero_page_call_test)
+{
+	cpu.write_memory(pc, CPX_ZERO_PAGE);
+	cpu.write_memory(low, value);
+	cpu.set_X(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 - value) == 0));
+	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
+}
+
+BOOST_AUTO_TEST_CASE(cpy_immediate_call_test)
+{
+	cpu.write_memory(pc, CPY_IMMEDIATE);
+	cpu.set_Y(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 - low) == 0));
+	BOOST_CHECK(cpu.is_C() == (value_2 >= low));
+}
+
+BOOST_AUTO_TEST_CASE(cpy_absolute_call_test)
+{
+	cpu.write_memory(pc, CPY_ABSOLUTE);
+	cpu.write_memory(address, value);
+	cpu.set_Y(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value_2 - value) == 0));
+	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
+}
+
+// BOOST_AUTO_TEST_CASE(dec_zero_page_x_call_test)
+// {
+// 	cpu.write_memory(pc, DEC_ZERO_PAGE_X);
+// 	cpu.set_X(value_2);
+// 	cpu.write_memory(low + value_2, value);
+// 	cpu.execute_instruction();
+// 	BOOST_CHECK(cpu.read_memory(low + value_2) == (value - 1));
+// }
 
 BOOST_AUTO_TEST_SUITE_END()
 
