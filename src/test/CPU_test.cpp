@@ -38,15 +38,23 @@ struct CPU_instructin_fixture {
 	uint8_t low;
 	uint8_t high;
 	uint8_t opcode;
+	uint8_t value;
+	uint8_t value_2;
+	uint16_t pc;
+	uint16_t address;
 
 	CPU_instructin_fixture() {
 		srand(time(NULL));
-		low    = (rand() % (UINT8_MAX + 1)) + 1;
-		high   = (rand() % (UINT8_MAX + 1)) + 1;
-		opcode = 0;
-		cpu.write_memory(cpu.get_PC(), opcode);
-		cpu.write_memory(cpu.get_PC() + 1, low);
-		cpu.write_memory(cpu.get_PC() + 2, high);
+		opcode  = 0;
+		low     = (rand() % (UINT8_MAX + 1)) + 1;
+		high    = (rand() % (UINT8_MAX + 1)) + 1;
+		address = ((high << 8) | low);
+		value   = (rand() % (UINT8_MAX + 1)) + 1;
+		value_2 = (rand() % (UINT8_MAX + 1)) + 1;
+		pc      = cpu.get_PC();
+		cpu.write_memory(pc, opcode);
+		cpu.write_memory(pc + 1, low);
+		cpu.write_memory(pc + 2, high);
 	};
 
 	~CPU_instructin_fixture() {
@@ -759,11 +767,33 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_FIXTURE_TEST_SUITE(CPU_execution_test, CPU_fixture)
+BOOST_FIXTURE_TEST_SUITE(CPU_execution_test, CPU_instructin_fixture)
 
-BOOST_AUTO_TEST_CASE(bcc_call_test)
+BOOST_AUTO_TEST_CASE(and_immediate_call_test)
 {
-	cpu.write_memory(cpu.get_PC(), 0x29);
+	cpu.write_memory(pc, 0x29);
+	cpu.set_A(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == (value_2 & low));
+}
+
+BOOST_AUTO_TEST_CASE(and_memory_test)
+{
+	cpu.set_X(value_2); // Set up X's displacement
+	cpu.set_A(value_2); // Set up original value of A
+	cpu.write_memory(pc, AND_ABSOLUTE_X); // write opcode
+	cpu.write_memory(address + value_2, value); // write & value at correct addr
+	cpu.execute_instruction(); 
+	BOOST_CHECK(cpu.get_A() == (value_2 & value));
+}
+
+BOOST_AUTO_TEST_CASE(asl_accumulator_call_test)
+{
+
+	cpu.write_memory(pc, ASL_ACCUMULATOR);
+	cpu.set_A(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == ((value << 1) & FE));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

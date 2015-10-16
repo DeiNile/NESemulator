@@ -1391,8 +1391,8 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			break;
 
 		default:
-			cerr << "Unsupported instruction called: " << hex << "0x" << opcode << endl;
-			break;
+		cerr << "Unsupported instruction called: " << hex << "0x" << opcode << endl;
+		break;
 	}
 }
 
