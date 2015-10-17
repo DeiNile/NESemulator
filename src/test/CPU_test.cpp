@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE(bpl_positive_test)
 BOOST_AUTO_TEST_CASE(brk_test)
 {
 	cpu.set_PC(address);
-	cpu.set_PS(value);
+	cpu.set_P(value);
 	cpu.brk();
 	BOOST_CHECK(cpu.is_B());
 	BOOST_CHECK(cpu.pull() == value);
@@ -716,7 +716,7 @@ BOOST_AUTO_TEST_CASE(pha_test)
 
 BOOST_AUTO_TEST_CASE(php_test)
 {
-	cpu.set_PS(value);
+	cpu.set_P(value);
 	cpu.php();
 	BOOST_CHECK(cpu.pull() == value);
 }
@@ -725,7 +725,7 @@ BOOST_AUTO_TEST_CASE(plp_test)
 {
 	cpu.push(value);
 	cpu.plp();
-	BOOST_CHECK(cpu.get_PS() == value);
+	BOOST_CHECK(cpu.get_P() == value);
 	BOOST_CHECK(cpu.is_C() == (value & 1));
 	BOOST_CHECK(cpu.is_Z() == ((value >> 1) & 1));
 	BOOST_CHECK(cpu.is_I() == ((value >> 2) & 1));
@@ -770,7 +770,7 @@ BOOST_AUTO_TEST_CASE(rti_test)
 	cpu.push_address(address);
 	cpu.push(value);
 	cpu.rti();
-	BOOST_CHECK(cpu.get_PS() == value);
+	BOOST_CHECK(cpu.get_P() == value);
 	BOOST_CHECK(cpu.get_PC() == address);
 }
 
@@ -1057,14 +1057,311 @@ BOOST_AUTO_TEST_CASE(cpy_absolute_call_test)
 	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
 }
 
-// BOOST_AUTO_TEST_CASE(dec_zero_page_x_call_test)
-// {
-// 	cpu.write_memory(pc, DEC_ZERO_PAGE_X);
-// 	cpu.set_X(value_2);
-// 	cpu.write_memory(low + value_2, value);
-// 	cpu.execute_instruction();
-// 	BOOST_CHECK(cpu.read_memory(low + value_2) == (value - 1));
-// }
+BOOST_AUTO_TEST_CASE(dec_zero_page_x_call_test)
+{
+	cpu.write_memory(pc, DEC_ZERO_PAGE_X);
+	cpu.set_X(value_2);
+	cpu.write_memory((uint8_t)(low + value_2), value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.read_memory((uint8_t)(low + value_2)) == (uint8_t)(value - 1));
+}
+
+BOOST_AUTO_TEST_CASE(dex_call_test)
+{
+	cpu.write_memory(pc, DEX);
+	cpu.set_X(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_X() == value_2 - 1);
+}
+
+BOOST_AUTO_TEST_CASE(dey_call_test)
+{
+	cpu.write_memory(pc, DEY);
+	cpu.set_Y(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_Y() == value_2 - 1);
+}
+
+BOOST_AUTO_TEST_CASE(eor_immediate_call_test)
+{
+	cpu.write_memory(pc, EOR_IMMEDIATE);
+	cpu.set_A(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == (value_2 ^ low));
+}
+
+BOOST_AUTO_TEST_CASE(eor_indirect_x_call_test)
+{
+	cpu.write_memory(pc, EOR_INDIRECT_X);
+	cpu.write_memory((uint8_t)(low + value), low);
+	cpu.write_memory((uint8_t)(low + value + 1), high);
+	cpu.set_A(value_2);
+	cpu.set_X(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == (value_2 ^ value));
+}
+
+BOOST_AUTO_TEST_CASE(inc_zero_page_call_test)
+{
+	cpu.write_memory(pc, INC_ZERO_PAGE);
+	cpu.write_memory(low, value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.read_memory(low) == value + 1);
+}
+
+BOOST_AUTO_TEST_CASE(inx_call_test)
+{
+	cpu.write_memory(pc, INX);
+	cpu.set_X(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_X() == value + 1);
+}
+
+BOOST_AUTO_TEST_CASE(iny_call_test)
+{
+	cpu.write_memory(pc, INY);
+	cpu.set_Y(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_Y() == value + 1);
+}
+
+BOOST_AUTO_TEST_CASE(jmp_absolute_call_test)
+{
+	cpu.write_memory(pc, JMP_ABSOLUTE);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == address);
+}
+
+BOOST_AUTO_TEST_CASE(jmp_indirect_call_test)
+{
+	cpu.write_memory(pc, JMP_INDIRECT);
+	cpu.write_memory(address, value_2);
+	cpu.write_memory(address + 1, value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == ((value << BYTE_LENGTH) | value_2));
+}
+
+BOOST_AUTO_TEST_CASE(jsr_call_test)
+{
+	cpu.write_memory(pc, JSR);
+	cpu.set_SP(address);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == address);
+}
+
+BOOST_AUTO_TEST_CASE(lda_immediate_call_test)
+{
+	cpu.write_memory(pc, LDA_IMMEDIATE);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == low);
+}
+
+BOOST_AUTO_TEST_CASE(lda_indirect_y_call_test)
+{
+	cpu.write_memory(pc, LDA_INDIRECT_Y);
+	cpu.set_Y(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == cpu.read_memory(address + value));
+}
+
+BOOST_AUTO_TEST_CASE(ldx_immediate_call_test)
+{
+	cpu.write_memory(pc, LDX_IMMEDIATE);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_X() == low);
+}
+
+BOOST_AUTO_TEST_CASE(ldx_zero_page_y_call_test)
+{
+	cpu.write_memory(pc, LDX_ZERO_PAGE_Y);
+	cpu.set_Y(value);
+	cpu.write_memory((uint8_t)(low + value), value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_X() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(ldy_immediate_call_test)
+{
+	cpu.write_memory(pc, LDY_IMMEDIATE);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_Y() == low);
+}
+
+BOOST_AUTO_TEST_CASE(ldy_zero_page_x_call_test)
+{
+	cpu.write_memory(pc, LDY_ZERO_PAGE_X);
+	cpu.set_X(value);
+	cpu.write_memory((uint8_t)(low + value), value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_Y() == value_2);
+}
+
+BOOST_AUTO_TEST_CASE(ora_immediate_call_test)
+{
+	cpu.write_memory(pc, ORA_IMMEDIATE);
+	cpu.set_A(value_2);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == (value_2 | low));
+}
+
+BOOST_AUTO_TEST_CASE(pha_call_test)
+{
+	cpu.write_memory(pc, PHA);
+	cpu.set_A(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.pull() == value);
+}
+
+BOOST_AUTO_TEST_CASE(php_call_test)
+{
+	cpu.write_memory(pc, PHP);
+	cpu.set_P(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.pull() == value);
+}
+
+BOOST_AUTO_TEST_CASE(pla_call_test)
+{
+	cpu.write_memory(pc, PLA);
+	cpu.push(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == value);
+}
+
+BOOST_AUTO_TEST_CASE(plp_call_test)
+{
+	cpu.write_memory(pc, PLP);
+	cpu.push(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_P() == value);
+}
+
+BOOST_AUTO_TEST_CASE(rol_accumulator_call_test)
+{
+	cpu.write_memory(pc, ROL_ACCUMULATOR);
+	cpu.set_A(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value << 1) == 0));
+}
+
+BOOST_AUTO_TEST_CASE(rol_absolute_call_test)
+{
+	cpu.write_memory(pc, ROL_ABSOLUTE);
+	cpu.write_memory(address, value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_Z() == ((value << 1) == 0));
+}
+
+BOOST_AUTO_TEST_CASE(rti_call_test)
+{
+	cpu.write_memory(pc, RTI);
+	cpu.push_address(address);
+	cpu.push(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_P() == value);
+	BOOST_CHECK(cpu.get_PC() == address);
+}
+
+BOOST_AUTO_TEST_CASE(rts_call_test)
+{
+	cpu.write_memory(pc, RTS);
+	cpu.push_address(address - 1);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_PC() == address);
+}
+
+BOOST_AUTO_TEST_CASE(sec_call_test)
+{
+	cpu.write_memory(pc, SEC);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_C());
+}
+
+BOOST_AUTO_TEST_CASE(sed_call_test)
+{
+	cpu.write_memory(pc, SED);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_D());
+}
+
+BOOST_AUTO_TEST_CASE(sei_call_test)
+{
+	cpu.write_memory(pc, SEI);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.is_I());
+}
+
+BOOST_AUTO_TEST_CASE(sta_absolute_y_call_test)
+{
+	cpu.write_memory(pc, STA_ABSOLUTE_Y);
+	cpu.set_A(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.read_memory(address) == value);
+}
+
+BOOST_AUTO_TEST_CASE(stx_zero_page_call_test)
+{
+	cpu.write_memory(pc, STX_ZERO_PAGE);
+	cpu.set_X(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.read_memory(low) == value);
+}
+
+BOOST_AUTO_TEST_CASE(sty_absolute_call_test)
+{
+	cpu.write_memory(pc, STY_ABSOLUTE);
+	cpu.set_Y(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.read_memory(address) == value);
+}
+
+BOOST_AUTO_TEST_CASE(tax_call_test)
+{
+	cpu.write_memory(pc, TAX);
+	cpu.set_A(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_X() == value);
+}
+
+BOOST_AUTO_TEST_CASE(tay_call_test)
+{
+	cpu.write_memory(pc, TAY);
+	cpu.set_A(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_Y() == value);	
+}
+
+BOOST_AUTO_TEST_CASE(tsx_call_test)
+{
+	cpu.write_memory(pc, TSX);
+	cpu.set_SP(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_X() == value);
+}
+
+BOOST_AUTO_TEST_CASE(txa_call_test)
+{
+	cpu.write_memory(pc, TXA);
+	cpu.set_X(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == value);
+}
+
+BOOST_AUTO_TEST_CASE(txs_call_test)
+{
+	cpu.write_memory(pc, TXS);
+	cpu.set_X(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_SP() == value);
+}
+
+BOOST_AUTO_TEST_CASE(tya_call_test)
+{
+	cpu.write_memory(pc, TYA);
+	cpu.set_Y(value);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_A() == value);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

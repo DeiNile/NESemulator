@@ -8,7 +8,7 @@ using namespace std;
 CPU::CPU()
 {
 	SP = STACK_END_OFFSET;
-	PS = STATUS_REGISTER_POWER_UP_STATE;
+	P = STATUS_REGISTER_POWER_UP_STATE;
 	PC = 0;
 	A  = 0;
 	X  = 0;
@@ -240,7 +240,8 @@ void CPU::iny()
 
 void CPU::dec(uint16_t address)
 {
-	uint8_t value = (read_memory(address) - 1) & UINT8_MAX;
+
+	uint8_t value = read_memory(address) - 1;
 	write_memory(address, value);
 	set_Z_flag(value);
 	set_N_flag(value);
@@ -569,13 +570,13 @@ void CPU::pha()
 
 void CPU::php()
 {
-	push(PS);
+	push(P);
 }
 
 void CPU::plp()
 {
-	set_PS_flags(pull());
-	// PS = pull();
+	set_P_flags(pull());
+	// P = pull();
 }
 
 void CPU::pla()
@@ -600,8 +601,9 @@ void CPU::rts()
 
 void CPU::rti()
 {
-	PS = pull();
+	P = pull();
 	PC = pull_address();
+	set_P_flags(P);
 }
 
 
@@ -655,7 +657,7 @@ void CPU::brk()
 	push((PC >> BYTE_LENGTH) & UINT8_MAX);
 	push(PC & UINT8_MAX);
 	B_flag = true;
-	push(PS);
+	push(P);
 	PC = read_memory(INTERRUPT_VECTOR);
 	PC <<= BYTE_LENGTH;
 	PC |= read_memory(INTERRUPT_VECTOR + 1);
@@ -704,19 +706,21 @@ uint16_t CPU::resolve_operand(int opcode, uint8_t high, uint8_t low)
 		case IMPLIED:
 			break;
 
-		case INDEXED_INDIRECT:
-			ret = read_memory((low + X + 1) & UINT8_MAX);
+		case INDEXED_INDIRECT: // X
+			// Get the HIGH byte for address
+			ret = read_memory((uint8_t)(low + X + 1) & UINT8_MAX);
 			ret <<= BYTE_LENGTH;
-			ret |= read_memory((low + X) & UINT8_MAX);
+			// Get the LOW byte for the address
+			ret |= read_memory((uint8_t)(low + X) & UINT8_MAX);
 			break;
 
 		case INDIRECT:
-			ret = read_memory(low + 1);
+			ret = read_memory(address + 1);
 			ret <<= BYTE_LENGTH;
-			ret |= read_memory(low);
+			ret |= read_memory(address);
 			break;
 
-		case INDIRECT_INDEXED:
+		case INDIRECT_INDEXED: // Y
 			ret = read_memory((low + 1) & UINT8_MAX);
 			ret <<= BYTE_LENGTH;
 			ret |= read_memory(low);
@@ -732,15 +736,16 @@ uint16_t CPU::resolve_operand(int opcode, uint8_t high, uint8_t low)
 			break;
 
 		case ZERO_PAGE_X:
-			ret = (low + X) & UINT8_MAX;
+			// All zero page addresses are 8 bits
+			ret = (uint8_t)(low + X);
 			break;
 
 		case ZERO_PAGE_Y:
-			ret = (low + Y) & UINT8_MAX;
+			ret = (uint8_t)(low + Y);
 			break;
 
 		default:
-			cerr << "invalid opcode <0x" << hex << opcode << ">" << std::endl;
+			std::cerr << "invalid opcode <0x" << std::hex << opcode << ">" << std::endl;
 	}
 	return ret;
 }
@@ -780,9 +785,9 @@ void CPU::set_N_flag(uint8_t value)
 	}
 }
 
-void CPU::set_PS_flags(uint8_t value)
+void CPU::set_P_flags(uint8_t value)
 {
-	PS = value;
+	P = value;
 	C_flag = (value & 1) ? true : false;
 	value >>= 1;
 	Z_flag = (value & 1) ? true : false;
@@ -808,8 +813,8 @@ void CPU::push_address(uint16_t address)
 {
 	uint8_t low_byte = address;
 	uint8_t high_byte = (address >> BYTE_LENGTH);
-	push(low_byte);
 	push(high_byte);
+	push(low_byte);
 }
 
 uint8_t CPU::pull()
@@ -819,31 +824,31 @@ uint8_t CPU::pull()
 
 uint16_t CPU::pull_address()
 {
-	uint8_t high_byte = pull();
 	uint8_t low_byte = pull();
+	uint8_t high_byte = pull();
 	uint16_t address = high_byte;
 	address <<= BYTE_LENGTH;
 	address |= low_byte;
 	return address;
 }
 
-void CPU::update_PS()
+void CPU::update_P()
 {
-	PS = 0;
-	PS |= N_flag;
-	PS <<= 1;
-	PS |= V_flag;
-	PS <<= 1;
-	PS <<= 1;
-	PS |= B_flag;
-	PS <<= 1;
-	PS |= D_flag;
-	PS <<= 1;
-	PS |= I_flag;
-	PS <<= 1;
-	PS |= Z_flag;
-	PS <<= 1;
-	PS |= C_flag;
+	P = 0;
+	P |= N_flag;
+	P <<= 1;
+	P |= V_flag;
+	P <<= 1;
+	P <<= 1;
+	P |= B_flag;
+	P <<= 1;
+	P |= D_flag;
+	P <<= 1;
+	P |= I_flag;
+	P <<= 1;
+	P |= Z_flag;
+	P <<= 1;
+	P |= C_flag;
 }
 
 void CPU::print_state()
@@ -904,9 +909,9 @@ uint8_t CPU::get_SP()
 	return SP;
 }
 
-uint16_t CPU::get_PS()
+uint16_t CPU::get_P()
 {
-	return PS;
+	return P;
 }
 
 bool CPU::is_N()
@@ -1009,9 +1014,9 @@ void CPU::set_SP(uint8_t val)
 	SP = val;
 }
 
-void CPU::set_PS(uint8_t val)
+void CPU::set_P(uint8_t val)
 {
-	PS = val;
+	P = val;
 }
 
 /*

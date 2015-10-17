@@ -54,16 +54,16 @@ public:
 	uint16_t resolve_operand(int, uint8_t, uint8_t); // should be private
 
 	// Load and store
-	void lda(uint16_t); // Load A with value at memory location
-	void ldx(uint16_t); // Load X with value at memory location
-	void ldy(uint16_t); // Load Y with value at memory location
+	void lda(uint16_t, bool); // Load A with value at memory location
+	void ldx(uint16_t, bool); // Load X with value at memory location
+	void ldy(uint16_t, bool); // Load Y with value at memory location
 	void sta(uint16_t); // Store A at memory location
 	void stx(uint16_t); // Store X at memory location
 	void sty(uint16_t); // Store Y at memory location
 
 	// Arithmetic
-	void adc(uint16_t); // Add to A with carry bit
-	void sbc(uint16_t); // Subtract from A with carry bit
+	void adc(uint16_t, bool); // Add to A with carry bit
+	void sbc(uint16_t, bool); // Subtract from A with carry bit
 
 	// Increment and decrement
 	void inc(uint16_t); // Increment value at memory location
@@ -74,15 +74,15 @@ public:
 	void dey(); 		// Decrement Y
 
 	// Logical
-	void _and(uint16_t);// AND value at memory location with A
-	void ora(uint16_t); // OR value at memory location with A
-	void eor(uint16_t); // XOR value at memory location with A
+	void _and(uint16_t, bool);// AND value at memory location with A
+	void ora(uint16_t, bool); // OR value at memory location with A
+	void eor(uint16_t, bool); // XOR value at memory location with A
 
 	// Jump, branch, compare and test
 	void jmp(uint16_t); // Jump to address
-	void cmp(uint16_t); // Compare value at memory location with A
-	void cpx(uint16_t); // Compare value at memory location with X
-	void cpy(uint16_t); // Compare value at memory location with Y
+	void cmp(uint16_t, bool); // Compare value at memory location with A
+	void cpx(uint16_t, bool); // Compare value at memory location with X
+	void cpy(uint16_t, bool); // Compare value at memory location with Y
 	void bcc(uint8_t);	// Branch if C = 0
 	void bcs(uint8_t);  // Branch if C = 1
 	void beq(uint8_t);  // Branch if Z = 1
@@ -110,7 +110,7 @@ public:
 	void txs(); // Move X to stack pointer
 	void pha(); // Push A onto stack
 	void php(); // Pulls A from stack
-	void plp(); // Pulls PS from stack
+	void plp(); // Pulls P from stack
 	void pla();	// Pulls A from stack
 
 	// Subroutine
@@ -134,19 +134,19 @@ public:
 	// Utils
 	void set_Z_flag(uint8_t);
 	void set_N_flag(uint8_t);
-	void set_PS_flags(uint8_t);
+	void set_P_flags(uint8_t);
 	void push(uint8_t);
 	void push_address(uint16_t);
 	uint8_t pull();
 	uint16_t pull_address();
-	void update_PS();
+	void update_P();
 	void print_state();
 	string hello_world();
 
 	// Functions to be used with unit tests
 	uint16_t get_PC();
 	uint8_t get_SP();
-	uint16_t get_PS();
+	uint16_t get_P();
 	uint8_t get_X();
 	uint8_t get_Y();
 	uint8_t get_A();
@@ -164,7 +164,7 @@ public:
 	void set_A(uint8_t);
 	void set_PC(uint16_t);
 	void set_SP(uint8_t);
-	void set_PS(uint8_t);
+	void set_P(uint8_t);
 	void set_C(bool);
 	void set_Z(bool);
 	void set_N(bool);
@@ -180,7 +180,7 @@ private:
 	// Registers
 	uint16_t PC; // Program counter, 16 bit
 	uint8_t SP; // Stack pointer, 8 bit, offset from 0x0100
-	uint8_t PS; // processor status / status register, 8 bit
+	uint8_t P; // processor status / status register, 8 bit
 	uint8_t A;  // accumulator, 8 bit
 	uint8_t X;  // index register, 8 bit
 	uint8_t Y;  // index register, 8 bit
