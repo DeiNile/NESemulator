@@ -33,7 +33,7 @@ struct CPU_fixture {
 	};
 };
 
-struct CPU_instructin_fixture {
+struct CPU_instruction_fixture {
 	CPU cpu;
 	uint8_t low;
 	uint8_t high;
@@ -43,7 +43,7 @@ struct CPU_instructin_fixture {
 	uint16_t pc;
 	uint16_t address;
 
-	CPU_instructin_fixture() {
+	CPU_instruction_fixture() {
 		srand(time(NULL));
 		opcode  = 0;
 		low     = (rand() % (UINT8_MAX + 1)) + 1;
@@ -57,7 +57,7 @@ struct CPU_instructin_fixture {
 		cpu.write_memory(pc + 2, high);
 	};
 
-	~CPU_instructin_fixture() {
+	~CPU_instruction_fixture() {
 
 	};
 };
@@ -778,7 +778,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_FIXTURE_TEST_SUITE(CPU_execution_test, CPU_instructin_fixture)
+BOOST_FIXTURE_TEST_SUITE(CPU_execution_test, CPU_instruction_fixture)
 
 BOOST_AUTO_TEST_CASE(and_immediate_call_test)
 {
@@ -1365,3 +1365,27 @@ BOOST_AUTO_TEST_CASE(tya_call_test)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+
+BOOST_FIXTURE_TEST_SUITE(instruction_time_tests, CPU_instruction_fixture)
+
+BOOST_AUTO_TEST_CASE(and_pages_do_not_differ_test)
+{
+	cpu.set_X(2);
+	cpu.write_memory(pc, AND_ABSOLUTE_X);
+	cpu.write_memory(pc + 1, 0);
+	cpu.write_memory(pc + 2, 0);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_clock_cycles() == 4);
+}
+
+BOOST_AUTO_TEST_CASE(and_pages_differ_test)
+{
+	cpu.set_X(2);
+	cpu.write_memory(pc, AND_ABSOLUTE_X);
+	cpu.write_memory(pc + 1, 0xFF);
+	cpu.write_memory(pc + 2, 0);
+	cpu.execute_instruction();
+	BOOST_CHECK(cpu.get_clock_cycles() == 5);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

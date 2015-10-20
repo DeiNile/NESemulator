@@ -150,6 +150,7 @@ public:
 	uint8_t get_X();
 	uint8_t get_Y();
 	uint8_t get_A();
+	int get_clock_cycles();
 	bool is_N();
 	bool is_C();
 	bool is_Z();
@@ -204,6 +205,7 @@ private:
 	static const unsigned char opcode_addressing_mode[];
 	static const std::string instruction_names[];
 	void execute(uint8_t, uint16_t);
+	bool pages_differ(uint16_t, uint16_t);
 
 };
 
