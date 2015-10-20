@@ -3,7 +3,7 @@
 #include <fstream>
 #include <string.h>
 
-#include "headers/Cartridge.h"
+#include "headers/Cartridge.hpp"
 
 using namespace std;
 
