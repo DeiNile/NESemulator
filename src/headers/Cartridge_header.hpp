@@ -7,8 +7,8 @@
 #define NES_NAME_LENGTH 4
 #define HEADER_LENGTH 16
 #define ZERO_FIELD_INDEX 11
-#define MIRRORING_INDEX_BIT 0x3
-#define NES2_FORMAT_MASK 0x4
+#define MIRRORING_INDEX_BIT 0x8
+#define NES2_FORMAT_MASK 0x8
 #define NYBBLE_LENGTH 4
 #define UPPER_NYBBLE_MASK 0xF0
 #define NES_NAME "NES\x1A"
@@ -19,11 +19,12 @@ class Header {
 public:
 	Header(uint8_t[]);
 	int get_CHR_size_8KB();
-	int get_PRG_size_16KB();
-	int get_PRG_size_8KB();
+	int get_PRG_RAM_size_8KB(); // 8 KB
+	int get_PRG_ROM_size_16KB(); // 16 KB
 	uint8_t get_flag_6();
 	uint8_t get_flag_7();
 	uint8_t get_flag_9();
+	uint8_t get_nybble();
 	bool valid_header();
 	bool is_vertical();
 	bool is_horizontal();
@@ -34,11 +35,12 @@ public:
 	bool is_playchoice();
 	bool is_NTSC();
 	bool is_PAL();
+	bool is_NES2_format();
 protected:
 private:
-	int PRG_size_16KB;
+	int PRG_ROM_size_16KB;
 	int CHR_size_8KB;
-	int PRG_size_8KB;
+	int PRG_RAM_size_8KB;
 	uint8_t flag_6;
 	uint8_t flag_7;
 	uint8_t flag_9;

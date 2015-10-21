@@ -1,4 +1,5 @@
 #include "headers/Cartridge_header.hpp"
+#include <iostream>
 
 Header::Header(uint8_t bytes[])
 {
@@ -6,12 +7,13 @@ Header::Header(uint8_t bytes[])
 	for (; i < NES_NAME_LENGTH; i++) {
 		nes_name += bytes[i];
 	}
-	PRG_size_16KB = bytes[i++];
-	CHR_size_8KB  = bytes[i++];
-	flag_6        = bytes[i++];
-	flag_7        = bytes[i++];
-	PRG_size_8KB  = bytes[i++];
-	flag_9        = bytes[i++];
+	PRG_ROM_size_16KB = bytes[i++];
+	CHR_size_8KB      = bytes[i++];
+	flag_6            = bytes[i++];
+	flag_7            = bytes[i++];
+	PRG_RAM_size_8KB  = bytes[i++];
+	flag_9            = bytes[i++];
+	update_flags();
 }
 
 int Header::get_CHR_size_8KB() 
@@ -19,14 +21,14 @@ int Header::get_CHR_size_8KB()
 	return CHR_size_8KB;
 }
 
-int Header::get_PRG_size_8KB()
+int Header::get_PRG_RAM_size_8KB()
 {
-	return PRG_size_8KB;	
+	return PRG_RAM_size_8KB;	
 }
 
-int Header::get_PRG_size_16KB()
+int Header::get_PRG_ROM_size_16KB()
 {
-	return PRG_size_16KB;
+	return PRG_ROM_size_16KB;
 }
 
 uint8_t Header::get_flag_6()
@@ -42,6 +44,11 @@ uint8_t Header::get_flag_7()
 uint8_t Header::get_flag_9()
 {
 	return flag_9;
+}
+
+uint8_t Header::get_nybble()
+{
+	return nybble;
 }
 
 bool Header::valid_header()
@@ -98,6 +105,11 @@ bool Header::is_PAL()
 	return !tv_system;
 }
 
+bool Header::is_NES2_format()
+{
+	return nes2;
+}
+
 
 void Header::update_flags()
 {
@@ -120,6 +132,8 @@ void Header::update_flags()
 	tv_system = (flag_9 & 1);
 	if ((flag_7 & NES2_FORMAT_MASK) == NES2_FORMAT_MASK) {
 		nes2 = true;
+	} else {
+		nes2 = false;
 	}
 
 	nybble = (flag_7 & UPPER_NYBBLE_MASK) | (flag_6 >> NYBBLE_LENGTH);
