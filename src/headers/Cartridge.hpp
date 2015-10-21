@@ -1,11 +1,11 @@
+#ifndef CARTRIDGE_H
+#define CARTRIDGE_H
+
+#include "Cartridge_header.hpp"
 #include <vector>
 #include <string>
 #include <iostream>
 #include <fstream>
-
-using namespace std;
-#ifndef CARTRIDGE_H
-#define CARTRIDGE_H
 
 #define KB_8 8192
 #define KB_16 16384
@@ -17,19 +17,12 @@ using namespace std;
 class Cartridge
 {
 public:
-	Cartridge(string);
+	Cartridge(std::string);
 	~Cartridge();
-	bool read_header();
-	int get_size_of_PRG_16KB();
-	int getSizeOfCHR();
-	int getSizeOfPRGram();
-	int get_size_of_PRG_8KB();
 protected:
 private:
-	ifstream rom; // stream for the ROM
-	char *header; // cartridge header
-
-	bool validate_header();
+	std::ifstream rom; // stream for the ROM
+	Header *header;
 };
 
 #endif
