@@ -58,4 +58,9 @@ BOOST_AUTO_TEST_CASE(get_playchoice_data_test)
 	BOOST_CHECK(cart->get_playchoice() != NULL);
 }
 
+BOOST_AUTO_TEST_CASE(has_chr_rom_test)
+{
+	BOOST_CHECK(cart->has_chr_rom());
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -32,6 +32,7 @@ public:
 	uint8_t *get_chr_rom();
 	uint8_t *get_prg_ram();
 	uint8_t *get_playchoice();
+	bool has_chr_rom();
 protected:
 private:
 	std::ifstream rom; // stream for the ROM

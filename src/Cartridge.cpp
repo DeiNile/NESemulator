@@ -86,6 +86,15 @@ uint8_t *Cartridge::get_playchoice()
 	return playchoice_data;
 }
 
+bool Cartridge::has_chr_rom()
+{
+	if (header->get_chr_size_8KB() == 0) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
 void Cartridge::load_trainer()
 {
 	if (header->is_trainer_present()) {
