@@ -18,9 +18,9 @@
 class Header {
 public:
 	Header(uint8_t[]);
-	int get_CHR_size_8KB();
-	int get_PRG_RAM_size_8KB(); // 8 KB
-	int get_PRG_ROM_size_16KB(); // 16 KB
+	int get_chr_size_8KB();
+	int get_prg_ram_size_8KB(); // 8 KB
+	int get_prg_rom_size_16KB(); // 16 KB
 	uint8_t get_flag_6();
 	uint8_t get_flag_7();
 	uint8_t get_flag_9();
@@ -38,9 +38,9 @@ public:
 	bool is_NES2_format();
 protected:
 private:
-	int PRG_ROM_size_16KB;
-	int CHR_size_8KB;
-	int PRG_RAM_size_8KB;
+	int prg_rom_size_16KB;
+	int chr_size_8KB;
+	int prg_ram_size_8KB;
 	uint8_t flag_6;
 	uint8_t flag_7;
 	uint8_t flag_9;
@@ -51,7 +51,7 @@ private:
 	// Flags 6
 	bool arrangement_mirroring; // 0 vertical, 1 horizontal
 	bool four_screen_VRAM;
-	bool battery_packed_PRG_RAM;
+	bool battery_packed_prg_ram;
 	bool trainer;
 
 	// Flags 7

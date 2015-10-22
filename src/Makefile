@@ -1,5 +1,5 @@
 OBJS = main.o Cartridge.o CPU.o execute.o Cartridge_header.o
-TEST_OBJS = CPU_test.o CPU.o execute.o Cartridge_header_test.o Cartridge_header.o Cartridge_test.o
+TEST_OBJS = CPU_test.o Cartridge.o CPU.o execute.o Cartridge_header_test.o Cartridge_header.o Cartridge_test.o
 INCLUDE = -l boost_unit_test_framework
 SRC = Cartridge.cpp CPU.cpp
 CC = g++
@@ -25,7 +25,7 @@ Cartridge.o:	Cartridge_header.o
 Cartridge_header.o:	
 	$(CC) $(CFLAGS) Cartridge_header.cpp
 
-CPU_test.o:	
+CPU_test.o:	CPU.o execute.o
 	$(CC) $(CFLAGS) CPU.cpp execute.cpp test/CPU_test.cpp
 
 Cartridge_header_test.o:	Cartridge_header.o

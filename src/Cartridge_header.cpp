@@ -7,28 +7,28 @@ Header::Header(uint8_t bytes[])
 	for (; i < NES_NAME_LENGTH; i++) {
 		nes_name += bytes[i];
 	}
-	PRG_ROM_size_16KB = bytes[i++];
-	CHR_size_8KB      = bytes[i++];
+	prg_rom_size_16KB = bytes[i++];
+	chr_size_8KB      = bytes[i++];
 	flag_6            = bytes[i++];
 	flag_7            = bytes[i++];
-	PRG_RAM_size_8KB  = bytes[i++];
+	prg_ram_size_8KB  = bytes[i++];
 	flag_9            = bytes[i++];
 	update_flags();
 }
 
-int Header::get_CHR_size_8KB() 
+int Header::get_chr_size_8KB() 
 {
-	return CHR_size_8KB;
+	return chr_size_8KB;
 }
 
-int Header::get_PRG_RAM_size_8KB()
+int Header::get_prg_ram_size_8KB()
 {
-	return PRG_RAM_size_8KB;	
+	return prg_ram_size_8KB;	
 }
 
-int Header::get_PRG_ROM_size_16KB()
+int Header::get_prg_rom_size_16KB()
 {
-	return PRG_ROM_size_16KB;
+	return prg_rom_size_16KB;
 }
 
 uint8_t Header::get_flag_6()
@@ -77,7 +77,7 @@ bool Header::is_four_screen_VRAM()
 
 bool Header::is_battery_present()
 {
-	return battery_packed_PRG_RAM;
+	return battery_packed_prg_ram;
 }
 
 bool Header::is_trainer_present()
@@ -120,7 +120,7 @@ void Header::update_flags()
 		four_screen_VRAM = true;
 	}
 	temp >>= 1;
-	battery_packed_PRG_RAM = (temp & 1);
+	battery_packed_prg_ram = (temp & 1);
 	temp >>= 1;
 	trainer = (temp & 1);
 

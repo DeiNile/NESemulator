@@ -19,7 +19,7 @@ struct Header_fixture {
 		raw_header[i++] = 'S';
 		raw_header[i++] = '\x1A';
 		raw_header[i++] = (uint8_t)64; // PRG ROM
-		raw_header[i++] = (uint8_t)64; // CHR ROM
+		raw_header[i++] = (uint8_t)64; // chr ROM
 		raw_header[i++] = 0x17; // Flags 6
 		raw_header[i++] = 0x13; // flags 7
 		raw_header[i++] = (uint8_t)64; // PRG RAM
@@ -48,17 +48,17 @@ BOOST_AUTO_TEST_CASE(valid_header_after_update_test)
 
 BOOST_AUTO_TEST_CASE(size_of_PRG_in_16KB_test)
 {
-	BOOST_CHECK(header->get_PRG_ROM_size_16KB() == 64);
+	BOOST_CHECK(header->get_prg_rom_size_16KB() == 64);
 }
 
 BOOST_AUTO_TEST_CASE(size_of_PRG_in_8KB_test)
 {
-	BOOST_CHECK(header->get_PRG_RAM_size_8KB() == 64);
+	BOOST_CHECK(header->get_prg_ram_size_8KB() == 64);
 }
 
-BOOST_AUTO_TEST_CASE(size_of_CHR_in_8KB_test)
+BOOST_AUTO_TEST_CASE(size_of_chr_in_8KB_test)
 {
-	BOOST_CHECK(header->get_CHR_size_8KB() == 64);
+	BOOST_CHECK(header->get_chr_size_8KB() == 64);
 }
 
 BOOST_AUTO_TEST_CASE(nybble_test)
