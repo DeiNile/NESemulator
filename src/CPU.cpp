@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <bitset>
+#include <vector>
 
 using namespace std;
 
@@ -14,9 +15,12 @@ CPU::CPU()
 	X  = 0;
 	Y  = 0;
 	clock_cycle = 0;
+	// CPU::memory.resize(MEM_SIZE);
+	f.open("my_log.txt", ofstream::out);
 }
 
-uint8_t CPU::memory[MEM_SIZE];
+std::vector<uint8_t> CPU::memory(MEM_SIZE);
+// uint8_t CPU::memory[MEM_SIZE];
 
 const unsigned char CPU::instruction_length[MAX_BYTE_VAL] = {
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -766,14 +770,26 @@ inline uint8_t CPU::read_memory(uint16_t address)
 	// } else {
 	// 	return -1;
 	// }
-	return memory[address];
+	// return memory[address];
+	return memory.at(address);
 }
 
 inline void CPU::write_memory(uint16_t address, uint8_t value)
 {
 	// if (address >= 0 && address < MEM_SIZE) {
 	// }
-	memory[address] = value;
+	memory.at(address) = value;
+
+}
+
+void CPU::load_prg_bank_lower(std::vector<uint8_t> v)
+{
+
+}
+
+void CPU::load_prg_bank_upper(std::vector<uint8_t> v)
+{
+
 }
 
 void CPU::set_Z_flag(uint8_t value)
@@ -815,7 +831,8 @@ void CPU::set_P_flags(uint8_t value)
 
 void CPU::push(uint8_t val)
 {
-	memory[STACK_START + (SP--)] = val;
+	// memory[STACK_START + (SP--)] = val;
+	memory.at(STACK_START + (SP--)) = val;
 }
 
 void CPU::push_address(uint16_t address)
@@ -828,7 +845,8 @@ void CPU::push_address(uint16_t address)
 
 uint8_t CPU::pull()
 {
-	return memory[STACK_START + (++SP)];
+	// return memory[STACK_START + (++SP)];
+	return memory.at(STACK_START + (++SP));
 }
 
 uint16_t CPU::pull_address()
@@ -862,19 +880,16 @@ void CPU::update_P()
 
 void CPU::print_state()
 {
-	cout << "A: " << hex << "0x" << A << endl
-		<< "X: " << "0x" << X << endl
-		<< "Y: " << "0x" << Y << endl
-		<< "PC: " << "0x" << PC << endl
-		<< "SP: " << "0x" << SP << endl << endl;
-	cout << boolalpha << "N: " << N_flag << endl
-		<< "C: " << C_flag << endl
-		<< "Z: " << Z_flag << endl
-		<< "I: " << I_flag << endl
-		<< "D: " << D_flag << endl
-		<< "B: " << B_flag << endl
-		<< "V: " << V_flag << endl
-		<< "S: " << S_flag << endl;
+	f << "A: " << hex << (int)A << " " << "X: " << (int)X << " " << "Y: " 
+		<< (int)Y << " " << "SP: " << (int)SP << endl;
+	// cout << boolalpha << "N: " << N_flag << endl
+	// 	<< "C: " << C_flag << endl
+	// 	<< "Z: " << Z_flag << endl
+	// 	<< "I: " << I_flag << endl
+	// 	<< "D: " << D_flag << endl
+	// 	<< "B: " << B_flag << endl
+	// 	<< "V: " << V_flag << endl
+	// 	<< "S: " << S_flag << endl;
 }
 
 
@@ -903,8 +918,14 @@ void CPU::fetch_and_execute()
 		high = read_memory(PC++);
 	}
 	uint16_t address = resolve_operand(opcode, high, low);
+	f << std::hex << (int)opcode << " " << (int)low << "  " 
+		<< (int)high << '\t' << instruction_names[opcode] << '\t';
 	execute(opcode, address);
+	print_state();
 	clock_cycle += execution_time[opcode];
+	if (PC == 0xC66E) {
+		f.close();
+	}
 }
 
 bool CPU::pages_differ(uint16_t address_1, uint16_t address_2)

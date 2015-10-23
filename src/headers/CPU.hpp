@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <string>
 #include <stdint.h>
+#include <iostream>
+#include <fstream>
+#include <vector>
 #include "Constants_opcodes.hpp"
 
 #define MEM_SIZE 65536
@@ -174,6 +177,8 @@ public:
 	static uint8_t rot_l(uint8_t);
 	static uint8_t rot_r(uint8_t);
 	void fetch_and_execute();
+	void load_prg_bank_lower(std::vector<uint8_t>);
+	void load_prg_bank_upper(std::vector<uint8_t>);
 
 protected:
 
@@ -196,7 +201,8 @@ private:
 	bool S_flag;
 
 	int clock_cycle;
-	static uint8_t memory[];
+	// static uint8_t memory[];
+	static std::vector<uint8_t> memory;
 
 	// Length of an instruction in bytes
 	static const unsigned char instruction_length[];
@@ -206,6 +212,8 @@ private:
 	static const std::string instruction_names[];
 	void execute(uint8_t, uint16_t);
 	bool pages_differ(uint16_t, uint16_t);
+
+	std::ofstream f;
 
 };
 
