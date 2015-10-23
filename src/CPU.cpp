@@ -1,4 +1,5 @@
 #include "headers/CPU.hpp"
+#include "headers/Cartridge.hpp"
 #include <iostream>
 #include <string>
 #include <bitset>
@@ -15,7 +16,6 @@ CPU::CPU()
 	X  = 0;
 	Y  = 0;
 	clock_cycle = 0;
-	// CPU::memory.resize(MEM_SIZE);
 	f.open("my_log.txt", ofstream::out);
 }
 
@@ -782,14 +782,28 @@ inline void CPU::write_memory(uint16_t address, uint8_t value)
 
 }
 
-void CPU::load_prg_bank_lower(std::vector<uint8_t> v)
+void CPU::load_prg_bank_lower(std::vector<uint8_t> &v)
 {
-
+	if (v.size() == PRG_ROM_UNITS) {
+		int j = PRG_LOWER_BANK_ADDRESS;
+		for (int i = 0; i < v.size(); i++, j++) {
+			write_memory(j, v.at(i));
+		}
+	} else {
+		std::cerr << "PRG ROM has illegal size: <" << v.size() << ">" << std::endl;
+	}
 }
 
-void CPU::load_prg_bank_upper(std::vector<uint8_t> v)
+void CPU::load_prg_bank_upper(std::vector<uint8_t> &v)
 {
-
+	if (v.size() == PRG_ROM_UNITS) {
+		int j = PRG_UPPER_BANK_ADDRESS;
+		for (int i = 0; i < v.size(); i++, j++) {
+			write_memory(j, v.at(i));
+		}
+	} else {
+		std::cerr << "PRG ROM has illegal size: <" << v.size() << ">" << std::endl;	
+	}
 }
 
 void CPU::set_Z_flag(uint8_t value)

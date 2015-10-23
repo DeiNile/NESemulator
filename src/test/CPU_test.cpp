@@ -6,6 +6,7 @@
 #include <time.h>
 #include <iostream>
 #include <stdint.h>
+#include <vector>
 
 using namespace std;
 
@@ -58,6 +59,20 @@ struct CPU_instruction_fixture {
 	};
 
 	~CPU_instruction_fixture() {
+
+	};
+};
+
+struct CPU_prg_fixture {
+	CPU cpu;
+	std::vector<uint8_t> v;
+
+	CPU_prg_fixture() {
+		v.resize(16384);
+		std::fill(v.begin(), v.end(), 1);
+	};
+
+	~CPU_prg_fixture() {
 
 	};
 };
@@ -1386,6 +1401,23 @@ BOOST_AUTO_TEST_CASE(and_pages_differ_test)
 	cpu.write_memory(pc + 2, 0);
 	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_clock_cycles() == 5);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE(load_prg_banks_tests, CPU_prg_fixture)
+
+BOOST_AUTO_TEST_CASE(prg_load_lower_bank_test)
+{
+	cpu.load_prg_bank_lower(v);
+	BOOST_CHECK(cpu.read_memory(0x8000) == 1);
+}
+
+BOOST_AUTO_TEST_CASE(prg_load_upper_bank_test)
+{
+	cpu.load_prg_bank_upper(v);
+	BOOST_CHECK(cpu.read_memory(0xC000) == 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

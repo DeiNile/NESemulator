@@ -20,6 +20,8 @@
 #define BIT_0_TO_7 7
 #define FE 0xFE
 #define BYTE_SIGN_UNSET_MAX 0x7F
+#define PRG_LOWER_BANK_ADDRESS 0x8000
+#define PRG_UPPER_BANK_ADDRESS 0xC000
 
 
 #define STACK_START 0x01FF
@@ -177,8 +179,8 @@ public:
 	static uint8_t rot_l(uint8_t);
 	static uint8_t rot_r(uint8_t);
 	void fetch_and_execute();
-	void load_prg_bank_lower(std::vector<uint8_t>);
-	void load_prg_bank_upper(std::vector<uint8_t>);
+	void load_prg_bank_lower(std::vector<uint8_t> &);
+	void load_prg_bank_upper(std::vector<uint8_t> &);
 
 protected:
 
