@@ -891,7 +891,7 @@ inline uint8_t CPU::rot_l(uint8_t value)
 /*
  * UNFINISHED
  */
-void CPU::execute_instruction() 
+void CPU::fetch_and_execute() 
 {
 	uint8_t opcode = read_memory(PC++);
 	uint8_t low = 0;

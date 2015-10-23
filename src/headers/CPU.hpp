@@ -173,7 +173,7 @@ public:
 
 	static uint8_t rot_l(uint8_t);
 	static uint8_t rot_r(uint8_t);
-	void execute_instruction();
+	void fetch_and_execute();
 
 protected:
 

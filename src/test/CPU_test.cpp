@@ -784,7 +784,7 @@ BOOST_AUTO_TEST_CASE(and_immediate_call_test)
 {
 	cpu.write_memory(pc, 0x29);
 	cpu.set_A(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == (value_2 & low));
 }
 
@@ -794,7 +794,7 @@ BOOST_AUTO_TEST_CASE(and_memory_test)
 	cpu.set_A(value_2); // Set up original value of A
 	cpu.write_memory(pc, AND_ABSOLUTE_X); // write opcode
 	cpu.write_memory(address + value_2, value); // write & value at correct addr
-	cpu.execute_instruction(); 
+	cpu.fetch_and_execute(); 
 	BOOST_CHECK(cpu.get_A() == (value_2 & value));
 }
 
@@ -803,7 +803,7 @@ BOOST_AUTO_TEST_CASE(asl_accumulator_call_test)
 
 	cpu.write_memory(pc, ASL_ACCUMULATOR);
 	cpu.set_A(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == ((value << 1) & FE));
 }
 
@@ -811,7 +811,7 @@ BOOST_AUTO_TEST_CASE(asl_memory_call_test)
 {
 	cpu.write_memory(pc, ASL_ABSOLUTE);
 	cpu.write_memory(address, value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.read_memory(address) == ((value << 1) & FE));
 }
 
@@ -819,7 +819,7 @@ BOOST_AUTO_TEST_CASE(bcc_with_branching_call_test)
 {
 	cpu.write_memory(pc, BCC);
 	cpu.set_C(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -827,7 +827,7 @@ BOOST_AUTO_TEST_CASE(bcc_without_branching_call_test)
 {
 	cpu.write_memory(pc, BCC);
 	cpu.set_C(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));
 }
 
@@ -835,7 +835,7 @@ BOOST_AUTO_TEST_CASE(bcs_with_branching_call_test)
 {
 	cpu.write_memory(pc, BCS);
 	cpu.set_C(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -843,7 +843,7 @@ BOOST_AUTO_TEST_CASE(bcs_without_branching_call_test)
 {
 	cpu.write_memory(pc, BCS);
 	cpu.set_C(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));
 }
 
@@ -851,7 +851,7 @@ BOOST_AUTO_TEST_CASE(beq_with_branching_call_test)
 {
 	cpu.write_memory(pc, BEQ);
 	cpu.set_Z(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -859,7 +859,7 @@ BOOST_AUTO_TEST_CASE(beq_without_branching_call_test)
 {
 	cpu.write_memory(pc, BEQ);
 	cpu.set_Z(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));
 }
 
@@ -868,7 +868,7 @@ BOOST_AUTO_TEST_CASE(bit_zero_page_call_test)
 	cpu.write_memory(pc, BIT_ZERO_PAGE);
 	cpu.write_memory(low, value);
 	cpu.set_A(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 & value) == 0));
 	BOOST_CHECK(cpu.is_V() == (((value_2 & value) & (1 << 6)) != 0));
 	BOOST_CHECK(cpu.is_N() == (((value_2 & value) & (1 << 7)) != 0));
@@ -879,7 +879,7 @@ BOOST_AUTO_TEST_CASE(bit_absolute_call_test)
 	cpu.write_memory(pc, BIT_ABSOLUTE);
 	cpu.write_memory(address, value);
 	cpu.set_A(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 & value) == 0));
 	BOOST_CHECK(cpu.is_V() == (((value_2 & value) & (1 << 6)) != 0));
 	BOOST_CHECK(cpu.is_N() == (((value_2 & value) & (1 << 7)) != 0));
@@ -889,7 +889,7 @@ BOOST_AUTO_TEST_CASE(bmi_with_branching_call_test)
 {
 	cpu.write_memory(pc, BMI);
 	cpu.set_N(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -897,7 +897,7 @@ BOOST_AUTO_TEST_CASE(bmi_without_branching_call_test)
 {
 	cpu.write_memory(pc, BMI);
 	cpu.set_N(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));
 }
 
@@ -905,7 +905,7 @@ BOOST_AUTO_TEST_CASE(bne_with_branching_call_test)
 {
 	cpu.write_memory(pc, BNE);
 	cpu.set_Z(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -913,7 +913,7 @@ BOOST_AUTO_TEST_CASE(bne_without_branching_call_test)
 {
 	cpu.write_memory(pc, BNE);
 	cpu.set_Z(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));
 }
 
@@ -921,7 +921,7 @@ BOOST_AUTO_TEST_CASE(bpl_with_branching_call_test)
 {
 	cpu.write_memory(pc, BPL);
 	cpu.set_N(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -929,14 +929,14 @@ BOOST_AUTO_TEST_CASE(bpl_without_branching_call_test)
 {
 	cpu.write_memory(pc, BPL);
 	cpu.set_N(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));
 }
 
 BOOST_AUTO_TEST_CASE(brk_call_test)
 {
 	cpu.write_memory(pc, BRK);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_B());
 }
 
@@ -944,7 +944,7 @@ BOOST_AUTO_TEST_CASE(bvc_with_branching_call_test)
 {
 	cpu.write_memory(pc, BVC);
 	cpu.set_V(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -952,7 +952,7 @@ BOOST_AUTO_TEST_CASE(bvc_without_branching_call_test)
 {
 	cpu.write_memory(pc, BVC);
 	cpu.set_V(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));	
 }
 
@@ -960,7 +960,7 @@ BOOST_AUTO_TEST_CASE(bvs_with_branching_call_test)
 {
 	cpu.write_memory(pc, BVS);
 	cpu.set_V(true);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2 + (uint8_t)address));
 }
 
@@ -968,35 +968,35 @@ BOOST_AUTO_TEST_CASE(bvs_without_branching_call_test)
 {
 	cpu.write_memory(pc, BVS);
 	cpu.set_V(false);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == (pc + 2));
 }
 
 BOOST_AUTO_TEST_CASE(clc_call_test)
 {
 	cpu.write_memory(pc, CLC);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(!cpu.is_C());
 }
 
 BOOST_AUTO_TEST_CASE(cld_call_test)
 {
 	cpu.write_memory(pc, CLD);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(!cpu.is_D());
 }
 
 BOOST_AUTO_TEST_CASE(cli_call_test)
 {
 	cpu.write_memory(pc, CLI);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(!cpu.is_I());
 }
 
 BOOST_AUTO_TEST_CASE(clv_call_test)
 {
 	cpu.write_memory(pc, CLV);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(!cpu.is_V());
 }
 
@@ -1004,7 +1004,7 @@ BOOST_AUTO_TEST_CASE(cmp_immediate_call_test)
 {
 	cpu.write_memory(pc, CMP_IMMEDIATE);
 	cpu.set_A(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 - low) == 0));
 	BOOST_CHECK(cpu.is_C() == (value_2 >= low));
 }
@@ -1014,7 +1014,7 @@ BOOST_AUTO_TEST_CASE(cmp_zero_page_call_test)
 	cpu.write_memory(pc, CMP_ZERO_PAGE);
 	cpu.write_memory(low, value);
 	cpu.set_A(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 - value) == 0));
 	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
 }
@@ -1023,7 +1023,7 @@ BOOST_AUTO_TEST_CASE(cpx_immediate_call_test)
 {
 	cpu.write_memory(pc, CPX_IMMEDIATE);
 	cpu.set_X(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 - low) == 0));
 	BOOST_CHECK(cpu.is_C() == (value_2 >= low));
 }
@@ -1033,7 +1033,7 @@ BOOST_AUTO_TEST_CASE(cpx_zero_page_call_test)
 	cpu.write_memory(pc, CPX_ZERO_PAGE);
 	cpu.write_memory(low, value);
 	cpu.set_X(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 - value) == 0));
 	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
 }
@@ -1042,7 +1042,7 @@ BOOST_AUTO_TEST_CASE(cpy_immediate_call_test)
 {
 	cpu.write_memory(pc, CPY_IMMEDIATE);
 	cpu.set_Y(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 - low) == 0));
 	BOOST_CHECK(cpu.is_C() == (value_2 >= low));
 }
@@ -1052,7 +1052,7 @@ BOOST_AUTO_TEST_CASE(cpy_absolute_call_test)
 	cpu.write_memory(pc, CPY_ABSOLUTE);
 	cpu.write_memory(address, value);
 	cpu.set_Y(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value_2 - value) == 0));
 	BOOST_CHECK(cpu.is_C() == (value_2 >= value));
 }
@@ -1062,7 +1062,7 @@ BOOST_AUTO_TEST_CASE(dec_zero_page_x_call_test)
 	cpu.write_memory(pc, DEC_ZERO_PAGE_X);
 	cpu.set_X(value_2);
 	cpu.write_memory((uint8_t)(low + value_2), value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.read_memory((uint8_t)(low + value_2)) == (uint8_t)(value - 1));
 }
 
@@ -1070,7 +1070,7 @@ BOOST_AUTO_TEST_CASE(dex_call_test)
 {
 	cpu.write_memory(pc, DEX);
 	cpu.set_X(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_X() == value_2 - 1);
 }
 
@@ -1078,7 +1078,7 @@ BOOST_AUTO_TEST_CASE(dey_call_test)
 {
 	cpu.write_memory(pc, DEY);
 	cpu.set_Y(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_Y() == value_2 - 1);
 }
 
@@ -1086,7 +1086,7 @@ BOOST_AUTO_TEST_CASE(eor_immediate_call_test)
 {
 	cpu.write_memory(pc, EOR_IMMEDIATE);
 	cpu.set_A(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == (value_2 ^ low));
 }
 
@@ -1097,7 +1097,7 @@ BOOST_AUTO_TEST_CASE(eor_indirect_x_call_test)
 	cpu.write_memory((uint8_t)(low + value + 1), high);
 	cpu.set_A(value_2);
 	cpu.set_X(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == (value_2 ^ value));
 }
 
@@ -1105,7 +1105,7 @@ BOOST_AUTO_TEST_CASE(inc_zero_page_call_test)
 {
 	cpu.write_memory(pc, INC_ZERO_PAGE);
 	cpu.write_memory(low, value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.read_memory(low) == value + 1);
 }
 
@@ -1113,7 +1113,7 @@ BOOST_AUTO_TEST_CASE(inx_call_test)
 {
 	cpu.write_memory(pc, INX);
 	cpu.set_X(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_X() == value + 1);
 }
 
@@ -1121,14 +1121,14 @@ BOOST_AUTO_TEST_CASE(iny_call_test)
 {
 	cpu.write_memory(pc, INY);
 	cpu.set_Y(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_Y() == value + 1);
 }
 
 BOOST_AUTO_TEST_CASE(jmp_absolute_call_test)
 {
 	cpu.write_memory(pc, JMP_ABSOLUTE);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == address);
 }
 
@@ -1137,7 +1137,7 @@ BOOST_AUTO_TEST_CASE(jmp_indirect_call_test)
 	cpu.write_memory(pc, JMP_INDIRECT);
 	cpu.write_memory(address, value_2);
 	cpu.write_memory(address + 1, value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == ((value << BYTE_LENGTH) | value_2));
 }
 
@@ -1145,14 +1145,14 @@ BOOST_AUTO_TEST_CASE(jsr_call_test)
 {
 	cpu.write_memory(pc, JSR);
 	cpu.set_SP(address);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == address);
 }
 
 BOOST_AUTO_TEST_CASE(lda_immediate_call_test)
 {
 	cpu.write_memory(pc, LDA_IMMEDIATE);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == low);
 }
 
@@ -1160,14 +1160,14 @@ BOOST_AUTO_TEST_CASE(lda_indirect_y_call_test)
 {
 	cpu.write_memory(pc, LDA_INDIRECT_Y);
 	cpu.set_Y(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == cpu.read_memory(address + value));
 }
 
 BOOST_AUTO_TEST_CASE(ldx_immediate_call_test)
 {
 	cpu.write_memory(pc, LDX_IMMEDIATE);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_X() == low);
 }
 
@@ -1176,14 +1176,14 @@ BOOST_AUTO_TEST_CASE(ldx_zero_page_y_call_test)
 	cpu.write_memory(pc, LDX_ZERO_PAGE_Y);
 	cpu.set_Y(value);
 	cpu.write_memory((uint8_t)(low + value), value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_X() == value_2);
 }
 
 BOOST_AUTO_TEST_CASE(ldy_immediate_call_test)
 {
 	cpu.write_memory(pc, LDY_IMMEDIATE);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_Y() == low);
 }
 
@@ -1192,7 +1192,7 @@ BOOST_AUTO_TEST_CASE(ldy_zero_page_x_call_test)
 	cpu.write_memory(pc, LDY_ZERO_PAGE_X);
 	cpu.set_X(value);
 	cpu.write_memory((uint8_t)(low + value), value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_Y() == value_2);
 }
 
@@ -1200,7 +1200,7 @@ BOOST_AUTO_TEST_CASE(ora_immediate_call_test)
 {
 	cpu.write_memory(pc, ORA_IMMEDIATE);
 	cpu.set_A(value_2);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == (value_2 | low));
 }
 
@@ -1208,7 +1208,7 @@ BOOST_AUTO_TEST_CASE(pha_call_test)
 {
 	cpu.write_memory(pc, PHA);
 	cpu.set_A(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.pull() == value);
 }
 
@@ -1216,7 +1216,7 @@ BOOST_AUTO_TEST_CASE(php_call_test)
 {
 	cpu.write_memory(pc, PHP);
 	cpu.set_P(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.pull() == value);
 }
 
@@ -1224,7 +1224,7 @@ BOOST_AUTO_TEST_CASE(pla_call_test)
 {
 	cpu.write_memory(pc, PLA);
 	cpu.push(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == value);
 }
 
@@ -1232,7 +1232,7 @@ BOOST_AUTO_TEST_CASE(plp_call_test)
 {
 	cpu.write_memory(pc, PLP);
 	cpu.push(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_P() == value);
 }
 
@@ -1240,7 +1240,7 @@ BOOST_AUTO_TEST_CASE(rol_accumulator_call_test)
 {
 	cpu.write_memory(pc, ROL_ACCUMULATOR);
 	cpu.set_A(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value << 1) == 0));
 }
 
@@ -1248,7 +1248,7 @@ BOOST_AUTO_TEST_CASE(rol_absolute_call_test)
 {
 	cpu.write_memory(pc, ROL_ABSOLUTE);
 	cpu.write_memory(address, value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_Z() == ((value << 1) == 0));
 }
 
@@ -1257,7 +1257,7 @@ BOOST_AUTO_TEST_CASE(rti_call_test)
 	cpu.write_memory(pc, RTI);
 	cpu.push_address(address);
 	cpu.push(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_P() == value);
 	BOOST_CHECK(cpu.get_PC() == address);
 }
@@ -1266,28 +1266,28 @@ BOOST_AUTO_TEST_CASE(rts_call_test)
 {
 	cpu.write_memory(pc, RTS);
 	cpu.push_address(address - 1);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_PC() == address);
 }
 
 BOOST_AUTO_TEST_CASE(sec_call_test)
 {
 	cpu.write_memory(pc, SEC);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_C());
 }
 
 BOOST_AUTO_TEST_CASE(sed_call_test)
 {
 	cpu.write_memory(pc, SED);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_D());
 }
 
 BOOST_AUTO_TEST_CASE(sei_call_test)
 {
 	cpu.write_memory(pc, SEI);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.is_I());
 }
 
@@ -1295,7 +1295,7 @@ BOOST_AUTO_TEST_CASE(sta_absolute_y_call_test)
 {
 	cpu.write_memory(pc, STA_ABSOLUTE_Y);
 	cpu.set_A(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.read_memory(address) == value);
 }
 
@@ -1303,7 +1303,7 @@ BOOST_AUTO_TEST_CASE(stx_zero_page_call_test)
 {
 	cpu.write_memory(pc, STX_ZERO_PAGE);
 	cpu.set_X(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.read_memory(low) == value);
 }
 
@@ -1311,7 +1311,7 @@ BOOST_AUTO_TEST_CASE(sty_absolute_call_test)
 {
 	cpu.write_memory(pc, STY_ABSOLUTE);
 	cpu.set_Y(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.read_memory(address) == value);
 }
 
@@ -1319,7 +1319,7 @@ BOOST_AUTO_TEST_CASE(tax_call_test)
 {
 	cpu.write_memory(pc, TAX);
 	cpu.set_A(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_X() == value);
 }
 
@@ -1327,7 +1327,7 @@ BOOST_AUTO_TEST_CASE(tay_call_test)
 {
 	cpu.write_memory(pc, TAY);
 	cpu.set_A(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_Y() == value);	
 }
 
@@ -1335,7 +1335,7 @@ BOOST_AUTO_TEST_CASE(tsx_call_test)
 {
 	cpu.write_memory(pc, TSX);
 	cpu.set_SP(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_X() == value);
 }
 
@@ -1343,7 +1343,7 @@ BOOST_AUTO_TEST_CASE(txa_call_test)
 {
 	cpu.write_memory(pc, TXA);
 	cpu.set_X(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == value);
 }
 
@@ -1351,7 +1351,7 @@ BOOST_AUTO_TEST_CASE(txs_call_test)
 {
 	cpu.write_memory(pc, TXS);
 	cpu.set_X(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_SP() == value);
 }
 
@@ -1359,7 +1359,7 @@ BOOST_AUTO_TEST_CASE(tya_call_test)
 {
 	cpu.write_memory(pc, TYA);
 	cpu.set_Y(value);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_A() == value);
 }
 
@@ -1374,7 +1374,7 @@ BOOST_AUTO_TEST_CASE(and_pages_do_not_differ_test)
 	cpu.write_memory(pc, AND_ABSOLUTE_X);
 	cpu.write_memory(pc + 1, 0);
 	cpu.write_memory(pc + 2, 0);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_clock_cycles() == 4);
 }
 
@@ -1384,7 +1384,7 @@ BOOST_AUTO_TEST_CASE(and_pages_differ_test)
 	cpu.write_memory(pc, AND_ABSOLUTE_X);
 	cpu.write_memory(pc + 1, 0xFF);
 	cpu.write_memory(pc + 2, 0);
-	cpu.execute_instruction();
+	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_clock_cycles() == 5);
 }
 
