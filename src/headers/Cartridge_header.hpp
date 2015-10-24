@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <vector>
 
 #define NES_NAME_LENGTH 4
 #define HEADER_LENGTH 16
@@ -17,7 +18,7 @@
 
 class Header {
 public:
-	Header(uint8_t[]);
+	Header(std::vector<uint8_t> &);
 	int get_chr_size_8KB();
 	int get_prg_ram_size_8KB(); // 8 KB
 	int get_prg_rom_size_16KB(); // 16 KB

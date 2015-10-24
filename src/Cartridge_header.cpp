@@ -1,18 +1,17 @@
 #include "headers/Cartridge_header.hpp"
-#include <iostream>
 
-Header::Header(uint8_t bytes[])
+Header::Header(std::vector<uint8_t> &bytes)
 {
 	int i = 0;
 	for (; i < NES_NAME_LENGTH; i++) {
-		nes_name += bytes[i];
+		nes_name += bytes.at(i);
 	}
-	prg_rom_size_16KB = bytes[i++];
-	chr_size_8KB      = bytes[i++];
-	flag_6            = bytes[i++];
-	flag_7            = bytes[i++];
-	prg_ram_size_8KB  = bytes[i++];
-	flag_9            = bytes[i++];
+	prg_rom_size_16KB = bytes.at(i++);
+	chr_size_8KB      = bytes.at(i++);
+	flag_6            = bytes.at(i++);
+	flag_7            = bytes.at(i++);
+	prg_ram_size_8KB  = bytes.at(i++);
+	flag_9            = bytes.at(i++);
 	update_flags();
 }
 

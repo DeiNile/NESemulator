@@ -27,21 +27,21 @@ public:
 	~Cartridge();
 
 	Header get_header();
-	uint8_t *get_trainer();
-	uint8_t *get_prg_rom();
-	uint8_t *get_chr_rom();
-	uint8_t *get_prg_ram();
-	uint8_t *get_playchoice();
+	std::vector<uint8_t> get_trainer();
+	std::vector<uint8_t> get_prg_rom();
+	std::vector<uint8_t> get_chr_rom();
+	std::vector<uint8_t> get_prg_ram();
+	std::vector<uint8_t> get_playchoice();
 	bool has_chr_rom();
 protected:
 private:
 	std::ifstream rom; // stream for the ROM
 	Header *header;
-	uint8_t trainer_data[TRAINER_SIZE];
-	uint8_t *prg_rom_data;
-	uint8_t *chr_rom_data;
-	uint8_t *prg_ram_data;
-	uint8_t *playchoice_data;
+	std::vector<uint8_t> trainer_data;
+	std::vector<uint8_t> prg_rom_data;
+	std::vector<uint8_t> chr_rom_data;
+	std::vector<uint8_t> prg_ram_data;
+	std::vector<uint8_t> playchoice_data;
 
 	void load_trainer();
 	void load_prg_rom();

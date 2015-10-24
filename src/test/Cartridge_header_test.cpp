@@ -4,32 +4,34 @@
 #include <time.h>
 #include <iostream>
 #include <stdint.h>
+#include <vector>
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE Cartridge_header_test
 
 struct Header_fixture {
 	Header *header;
-	uint8_t raw_header[16];
+	std::vector<uint8_t> raw_header;
 
 	Header_fixture() {
+		raw_header.resize(HEADER_LENGTH);
 		int i = 0;
-		raw_header[i++] = 'N';
-		raw_header[i++] = 'E';
-		raw_header[i++] = 'S';
-		raw_header[i++] = '\x1A';
-		raw_header[i++] = (uint8_t)64; // PRG ROM
-		raw_header[i++] = (uint8_t)64; // chr ROM
-		raw_header[i++] = 0x17; // Flags 6
-		raw_header[i++] = 0x13; // flags 7
-		raw_header[i++] = (uint8_t)64; // PRG RAM
-		raw_header[i++] = 0x1; // Flags 9
-		raw_header[i++] = 0;
-		raw_header[i++] = 0;
-		raw_header[i++] = 0;
-		raw_header[i++] = 0;
-		raw_header[i++] = 0;
-		raw_header[i++] = 0;
+		raw_header.at(i++) = 'N';
+		raw_header.at(i++) = 'E';
+		raw_header.at(i++) = 'S';
+		raw_header.at(i++) = '\x1A';
+		raw_header.at(i++) = (uint8_t)64; // PRG ROM
+		raw_header.at(i++) = (uint8_t)64; // chr ROM
+		raw_header.at(i++) = 0x17; // Flags 6
+		raw_header.at(i++) = 0x13; // flags 7
+		raw_header.at(i++) = (uint8_t)64; // PRG RAM
+		raw_header.at(i++) = 0x1; // Flags 9
+		raw_header.at(i++) = 0;
+		raw_header.at(i++) = 0;
+		raw_header.at(i++) = 0;
+		raw_header.at(i++) = 0;
+		raw_header.at(i++) = 0;
+		raw_header.at(i++) = 0;
 
 		header = new Header(raw_header);
 	};
@@ -113,7 +115,7 @@ BOOST_AUTO_TEST_CASE(is_not_NES2_format_test)
 
 BOOST_AUTO_TEST_CASE(is_NES2_format_test)
 {
-	raw_header[7] = 0x1B;
+	raw_header[7] = 0x1B; // Sets NES2 bit 
 	delete header;
 	header = new Header(raw_header);
 	BOOST_CHECK(header->is_NES2_format());
