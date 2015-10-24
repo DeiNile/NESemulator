@@ -4,6 +4,7 @@
 #include <string>
 #include <bitset>
 #include <vector>
+#include <iomanip>
 
 using namespace std;
 
@@ -16,7 +17,7 @@ CPU::CPU()
 	X  = 0;
 	Y  = 0;
 	clock_cycle = 0;
-	f.open("my_log.txt", ofstream::out);
+	f.open("my_log.txt", ofstream::out | ofstream::trunc);
 }
 
 std::vector<uint8_t> CPU::memory(MEM_SIZE);
@@ -894,7 +895,7 @@ void CPU::update_P()
 
 void CPU::print_state()
 {
-	f << "A: " << hex << (int)A << " " << "X: " << (int)X << " " << "Y: " 
+	f << setw(4) << "A: " << hex << (int)A << " " << "X: " << (int)X << " " << "Y: " 
 		<< (int)Y << " " << "SP: " << (int)SP << endl;
 	// cout << boolalpha << "N: " << N_flag << endl
 	// 	<< "C: " << C_flag << endl
@@ -932,8 +933,9 @@ void CPU::fetch_and_execute()
 		high = read_memory(PC++);
 	}
 	uint16_t address = resolve_operand(opcode, high, low);
-	f << std::hex << (int)opcode << " " << (int)low << "  " 
-		<< (int)high << '\t' << instruction_names[opcode] << '\t';
+	f << std::left << setw(6) << std::hex << (int)PC << std::right << 
+		(int)opcode << " " << (int)low << "  " << (int)high << '\t' << 
+		instruction_names[opcode] << '\t';
 	execute(opcode, address);
 	print_state();
 	clock_cycle += execution_time[opcode];

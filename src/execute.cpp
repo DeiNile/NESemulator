@@ -1,5 +1,6 @@
 #include "headers/CPU.hpp"
 #include <iostream>
+#include <iomanip>
 
 /*
  * Calls the proper instruction depending on the opcpde. 
@@ -379,7 +380,8 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			break;
 
 		default:
-		cerr << "Unsupported instruction called: " << hex << "0x" << opcode << endl;
+		cerr << "Unsupported instruction called: " << hex << "0x" << std::left 
+			<< std::setw(4) << (int)opcode << instruction_names[opcode] << endl;
 		break;
 	}
 }
