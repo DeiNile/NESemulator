@@ -10,19 +10,19 @@ LFLAGS = -Wall $(DEBUG)
 all:	$(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o nes
 
-main.o:	CPU.o Cartridge.o
+main.o:	CPU.o Cartridge.o main.cpp
 	$(CC) $(CFLAGS) main.cpp
 
-CPU.o:	execute.o
+CPU.o:	execute.o CPU.cpp
 	$(CC) $(CFLAGS) CPU.cpp
 
-execute.o:	
+execute.o:	execute.cpp
 	$(CC) $(CFLAGS) execute.cpp
 
-Cartridge.o:	Cartridge_header.o
+Cartridge.o:	Cartridge_header.o Cartridge.cpp
 	$(CC) $(CFLAGS) Cartridge.cpp
 
-Cartridge_header.o:	
+Cartridge_header.o:	Cartridge_header.cpp
 	$(CC) $(CFLAGS) Cartridge_header.cpp
 
 CPU_test.o:	CPU.o execute.o
