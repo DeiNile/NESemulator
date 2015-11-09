@@ -10,20 +10,24 @@ using namespace std;
 
 CPU::CPU()
 {
-	SP = STACK_END_OFFSET;
+	// SP = STACK_END_OFFSET;
+	SP = 0xFD;
 	P = STATUS_REGISTER_POWER_UP_STATE;
+	set_P_flags(0x24);
+	P = 0x24;
 	PC = 0;
 	A  = 0;
 	X  = 0;
 	Y  = 0;
 	clock_cycle = 0;
-	f.open("my_log.txt", ofstream::out | ofstream::trunc);
+	// f.open("my_log.txt", ofstream::out);
+	f = fopen("my_log.txt", "w");
+	linenum = 1;
 }
 
 std::vector<uint8_t> CPU::memory(MEM_SIZE);
-// uint8_t CPU::memory[MEM_SIZE];
 
-const unsigned char CPU::instruction_length[MAX_BYTE_VAL] = {
+const unsigned char CPU::instruction_length[UINT8_MAX + 1] = {
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -42,7 +46,7 @@ const unsigned char CPU::instruction_length[MAX_BYTE_VAL] = {
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 };
 
-const unsigned char CPU::execution_time[MAX_BYTE_VAL] = {
+const unsigned char CPU::execution_time[UINT8_MAX + 1] = {
 	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
@@ -61,7 +65,7 @@ const unsigned char CPU::execution_time[MAX_BYTE_VAL] = {
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 };
 
-const unsigned char CPU::opcode_addressing_mode[MAX_BYTE_VAL] = {
+const unsigned char CPU::opcode_addressing_mode[UINT8_MAX + 1] = {
 	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 	1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
@@ -80,7 +84,7 @@ const unsigned char CPU::opcode_addressing_mode[MAX_BYTE_VAL] = {
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 };
 
-const string CPU::instruction_names[MAX_BYTE_VAL] = {
+const string CPU::instruction_names[UINT8_MAX + 1] = {
 	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
 	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
 	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
@@ -176,8 +180,8 @@ void CPU::adc(uint16_t address, bool read_from_memory)
 	} else {
 		val = address;
 	}
-	uint8_t sum;
-	if ((sum = val + prev_A + C_flag) > UINT8_MAX) {
+	uint8_t sum = val + prev_A + C_flag;
+	if ((val + prev_A + C_flag) > UINT8_MAX) {
 		sec();
 	} else {
 		clc();
@@ -195,28 +199,30 @@ void CPU::adc(uint16_t address, bool read_from_memory)
 
 void CPU::sbc(uint16_t address, bool read_from_memory)
 {
-	uint8_t prev_A = A;
+	// uint8_t prev_A = A;
 	uint8_t val;
 	if (read_from_memory) {
 		val = read_memory(address);
 	} else {
 		val = address;
 	}
-	int sum = val - prev_A - !C_flag;
-	if (sum > INT8_MAX || sum < INT8_MIN) {
-		V_flag = true;
-	} else {
-		V_flag = false;
-	}
-	if (sum > UINT8_MAX) {
-		sec();
-	} else {
-		clc();
-	}
+	adc(~val, false);
 
-	A = (uint8_t)sum;
-	set_Z_flag(A);
-	set_N_flag(A);
+	// int sum = prev_A - val - !C_flag;
+	// if (sum > INT8_MAX || sum < INT8_MIN) {
+	// 	V_flag = true;
+	// } else {
+	// 	V_flag = false;
+	// }
+	// if (sum >= 0) {
+	// 	sec();
+	// } else {
+	// 	clc();
+	// }
+
+	// A = (uint8_t)sum;
+	// set_Z_flag(A);
+	// set_N_flag(A);
 }
 
 // Increment and decrement
@@ -364,56 +370,56 @@ void CPU::cpy(uint16_t address, bool read_from_memory)
 	set_N_flag(val);
 }
 
-void CPU::bcc(uint8_t displacement)
+void CPU::bcc(int8_t displacement)
 {
 	if (!C_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bcs(uint8_t displacement)
+void CPU::bcs(int8_t displacement)
 {
 	if (C_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::beq(uint8_t displacement) 
+void CPU::beq(int8_t displacement) 
 {
 	if (Z_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bne(uint8_t displacement)
+void CPU::bne(int8_t displacement)
 {
 	if (!Z_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bmi(uint8_t displacement)
+void CPU::bmi(int8_t displacement)
 {
 	if (N_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bpl(uint8_t displacement)
+void CPU::bpl(int8_t displacement)
 {
 	if (!N_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bvs(uint8_t displacement) 
+void CPU::bvs(int8_t displacement) 
 {
 	if (V_flag) {
 		PC += displacement;
 	}
 }
 
-void CPU::bvc(uint8_t displacement) 
+void CPU::bvc(int8_t displacement) 
 {
 	if (!V_flag) {
 		PC += displacement;
@@ -422,12 +428,11 @@ void CPU::bvc(uint8_t displacement)
 
 void CPU::bit(uint16_t address)
 {
-	int mem_val = (A & read_memory(address));
+	uint8_t mem_val = read_memory(address);
+	V_flag = ((mem_val >> 6) & 1);
+	set_N_flag(mem_val);
+	mem_val = (A & mem_val);
 	set_Z_flag(mem_val);
-	mem_val >>= 6;
-	V_flag = mem_val & 1;
-	mem_val >>= 1;
-	N_flag = mem_val & 1;
 }
 
 // Shift and rotate
@@ -506,23 +511,36 @@ void CPU::rol(uint16_t address, bool read_from_memory)
 
 void CPU::ror(uint16_t address, bool read_from_memory)
 {
-	bool new_carry;
 	uint8_t new_val;
 	if (read_from_memory) {
 		new_val = read_memory(address);
 	} else {
 		new_val = A;
 	}
-	new_carry = ((new_val & BYTE_SIGN_BIT_SET_MASK) == 0) ? false : true;
-	new_val = rot_r(new_val);
+	bool new_carry = ((new_val & 1) == 0) ? false : true;
+	new_val >>= 1;
+	new_val |= ((C_flag << 7));
 	C_flag = new_carry;
 	set_Z_flag(new_val);
 	set_N_flag(new_val);
-	if (read_from_memory) {
+	if(read_from_memory) {
 		write_memory(address, new_val);
 	} else {
 		A = new_val;
 	}
+
+
+
+	// C_flag = ((new_val & 1) == 0) ? false : true;
+	// new_val = rot_r(new_val);
+	// new_val &= ((C_flag << 7) & BYTE_SIGN_UNSET_MAX);
+	// set_Z_flag(new_val);
+	// set_N_flag(new_val);
+	// if (read_from_memory) {
+	// 	write_memory(address, new_val);
+	// } else {
+	// 	A = new_val;
+	// }
 }
 
 // Transfer
@@ -576,18 +594,19 @@ void CPU::pha()
 
 void CPU::php()
 {
-	push(P);
+	update_P();
+	push(P | B_BIT);
 }
 
 void CPU::plp()
 {
-	set_P_flags(pull());
-	// P = pull();
+	// Bit 5 is always set, (bit 4 is always unset ?)
+	set_P_flags((pull() | UNUSED_BIT) & ALL_P_FLAGS_SET_B_FLAG_UNSET);
 }
 
 void CPU::pla()
 {
-	A = pull();
+	A = (pull());
 	set_Z_flag(A);
 	set_N_flag(A);
 }
@@ -607,7 +626,7 @@ void CPU::rts()
 
 void CPU::rti()
 {
-	P = pull();
+	P = pull() | UNUSED_BIT;
 	PC = pull_address();
 	set_P_flags(P);
 }
@@ -663,7 +682,8 @@ void CPU::brk()
 	push((PC >> BYTE_LENGTH) & UINT8_MAX);
 	push(PC & UINT8_MAX);
 	B_flag = true;
-	push(P);
+	I_flag = true;
+	push(P | B_BIT);
 	PC = read_memory(INTERRUPT_VECTOR);
 	PC <<= BYTE_LENGTH;
 	PC |= read_memory(INTERRUPT_VECTOR + 1);
@@ -680,7 +700,7 @@ void CPU::brk()
  *
  * @return The address that the instruction needs to read values from
  */
-uint16_t CPU::resolve_operand(int opcode, uint8_t high, uint8_t low)
+uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 {
 	uint16_t ret = 0;
 	uint16_t address = high;
@@ -724,9 +744,10 @@ uint16_t CPU::resolve_operand(int opcode, uint8_t high, uint8_t low)
 			break;
 
 		case INDIRECT:
-			ret = read_memory(address + 1);
-			ret <<= BYTE_LENGTH;
-			ret |= read_memory(address);
+			// ret = read_memory(address + 1);
+			// ret <<= BYTE_LENGTH;
+			// ret |= read_memory(address);
+			ret = calculate_address_buggy(address);
 			break;
 
 		case INDIRECT_INDEXED: // Y
@@ -764,22 +785,36 @@ uint16_t CPU::resolve_operand(int opcode, uint8_t high, uint8_t low)
 	return ret;
 }
 
+uint16_t CPU::calculate_address_buggy(uint16_t address) {
+	uint16_t ret;
+	if ((uint8_t)address == UINT8_MAX) {
+		ret = read_memory(address & 0xFF00);
+	} else {
+		ret = read_memory(address + 1);
+	}
+	ret <<= BYTE_LENGTH;
+	ret |= read_memory(address);
+	return ret;
+}
+
 
 inline uint8_t CPU::read_memory(uint16_t address)
 {
-	// if (address >= 0 && address <= MEM_SIZE) {
-	// } else {
-	// 	return -1;
-	// }
-	// return memory[address];
-	return memory.at(address);
+	return memory.at((int)address);
 }
 
 inline void CPU::write_memory(uint16_t address, uint8_t value)
 {
-	// if (address >= 0 && address < MEM_SIZE) {
-	// }
 	memory.at(address) = value;
+	uint16_t base = address % 0x0800;
+	// if (value == 0x33 || value == 33) {
+	// 	std::cerr << std::hex << (int)egg << ", " << (int)address << "  " << (int)value << std::endl;
+	// }
+	if (address >= 0x0 && address <= 0x01FFF) {
+		memory.at(base + 0x800) = value;
+		memory.at(base + 0x1000) = value;
+		memory.at(base + 0x1800) = value;
+	}
 
 }
 
@@ -838,6 +873,7 @@ void CPU::set_P_flags(uint8_t value)
 	value >>= 1;
 	B_flag = (value & 1) ? true : false;
 	value >>= 1;
+	unused_flag = (value & 1) ? true : false;
 	value >>= 1;
 	V_flag = (value & 1) ? true : false;
 	value >>= 1;
@@ -846,7 +882,6 @@ void CPU::set_P_flags(uint8_t value)
 
 void CPU::push(uint8_t val)
 {
-	// memory[STACK_START + (SP--)] = val;
 	memory.at(STACK_START + (SP--)) = val;
 }
 
@@ -860,7 +895,6 @@ void CPU::push_address(uint16_t address)
 
 uint8_t CPU::pull()
 {
-	// return memory[STACK_START + (++SP)];
 	return memory.at(STACK_START + (++SP));
 }
 
@@ -881,6 +915,7 @@ void CPU::update_P()
 	P <<= 1;
 	P |= V_flag;
 	P <<= 1;
+	P |= unused_flag;
 	P <<= 1;
 	P |= B_flag;
 	P <<= 1;
@@ -893,18 +928,18 @@ void CPU::update_P()
 	P |= C_flag;
 }
 
+void CPU::write_state()
+{
+	fprintf(f, "\tA:%02X X:%02X Y:%02X P:%02X SP:%02X\n", A, X, Y, P, SP);	
+}
+
 void CPU::print_state()
 {
-	f << setw(4) << "A: " << hex << (int)A << " " << "X: " << (int)X << " " << "Y: " 
-		<< (int)Y << " " << "SP: " << (int)SP << endl;
-	// cout << boolalpha << "N: " << N_flag << endl
-	// 	<< "C: " << C_flag << endl
-	// 	<< "Z: " << Z_flag << endl
-	// 	<< "I: " << I_flag << endl
-	// 	<< "D: " << D_flag << endl
-	// 	<< "B: " << B_flag << endl
-	// 	<< "V: " << V_flag << endl
-	// 	<< "S: " << S_flag << endl;
+	std::cerr << std::hex << "A:" << (int)A << " X:" << (int)X << " Y:" << 
+		(int)Y << " P:" << (int)P << " SP:" << (int)SP << "    " 
+		<< std::boolalpha << "C: " << C_flag << " Z: " << Z_flag << " I: " 
+		<< I_flag << " D: " << D_flag << " B: " << B_flag << " V: " << V_flag 
+		<< " S: " << S_flag << std::endl;
 }
 
 
@@ -923,25 +958,32 @@ inline uint8_t CPU::rot_l(uint8_t value)
  */
 void CPU::fetch_and_execute() 
 {
+	fprintf(f, "%04X", PC);
 	uint8_t opcode = read_memory(PC++);
 	uint8_t low = 0;
 	uint8_t high = 0;
+	fprintf(f, "  %02X ", opcode);
 	if (instruction_length[opcode] == 2) {
 		low = read_memory(PC++);
+		fprintf(f, "%02X%5s", low, "");
 	} else if (instruction_length[opcode] == 3){
 		low = read_memory(PC++);
 		high = read_memory(PC++);
+		fprintf(f, "%02X %02X  ", low, high);
+	} else {
+		fprintf(f, "%7s", "");
 	}
-	uint16_t address = resolve_operand(opcode, high, low);
-	f << std::left << setw(6) << std::hex << (int)PC << std::right << 
-		(int)opcode << " " << (int)low << "  " << (int)high << '\t' << 
-		instruction_names[opcode] << '\t';
+	uint16_t address = calculate_address(opcode, high, low);
+	fprintf(f, "%s\t", instruction_names[opcode].c_str());
+	write_state();
 	execute(opcode, address);
-	print_state();
+	update_P();
 	clock_cycle += execution_time[opcode];
-	if (PC == 0xC66E) {
-		f.close();
+	if (PC == 0xC66E || linenum == 8992) {
+		fclose(f);
+		exit(0);
 	}
+	linenum++;
 }
 
 bool CPU::pages_differ(uint16_t address_1, uint16_t address_2)
@@ -1074,4 +1116,19 @@ void CPU::set_SP(uint8_t val)
 void CPU::set_P(uint8_t val)
 {
 	P = val;
+}
+
+void CPU::check_memory_for_value(uint8_t val)
+{
+	for (int i = 0; i < memory.size(); i++) {
+		if (memory.at(i) == val) {
+			std::cout << setw(5) << i << ", ";
+		}
+	}
+	std::cerr << std::endl;
+}
+
+void CPU::print(int i)
+{
+	std::cerr << (int)memory.at(i) << std::endl;
 }

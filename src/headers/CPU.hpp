@@ -7,12 +7,10 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <stdio.h>
 #include "Constants_opcodes.hpp"
 
 #define MEM_SIZE 65536
-#define MAX_BYTE_VAL 256
-#define MAX_SIGNED_BYTE_VAL 127
-#define MIN_SIGNED_BYTE_VAL -127
 #define ZERO_PAGE_WRAPAROUND 0xFF
 #define STACK_POINTER_WRAPAROUND 0xFF
 #define BYTE_SIGN_BIT_SET_MASK 0x80
@@ -22,9 +20,12 @@
 #define BYTE_SIGN_UNSET_MAX 0x7F
 #define PRG_LOWER_BANK_ADDRESS 0x8000
 #define PRG_UPPER_BANK_ADDRESS 0xC000
+#define IGNORED_BITS 0xCF
+#define UNUSED_BIT 0x20
+#define B_BIT 0x10
+#define ALL_P_FLAGS_SET_B_FLAG_UNSET 0xEF
 
-
-#define STACK_START 0x01FF
+#define STACK_START 0x0100
 #define STACK_END_OFFSET 0xFF
 #define STATUS_REGISTER_POWER_UP_STATE 0x34
 
@@ -56,7 +57,7 @@ public:
 
 	uint8_t read_memory(uint16_t); // Should be private and inline
 	void write_memory(uint16_t, uint8_t); // Should be private and inline
-	uint16_t resolve_operand(int, uint8_t, uint8_t); // should be private
+	uint16_t calculate_address(int, uint8_t, uint8_t); // should be private
 
 	// Load and store
 	void lda(uint16_t, bool); // Load A with value at memory location
@@ -88,14 +89,14 @@ public:
 	void cmp(uint16_t, bool); // Compare value at memory location with A
 	void cpx(uint16_t, bool); // Compare value at memory location with X
 	void cpy(uint16_t, bool); // Compare value at memory location with Y
-	void bcc(uint8_t);	// Branch if C = 0
-	void bcs(uint8_t);  // Branch if C = 1
-	void beq(uint8_t);  // Branch if Z = 1
-	void bne(uint8_t);  // Branch if Z = 0
-	void bmi(uint8_t);  // Branch if N = 1
-	void bpl(uint8_t);  // Branch if N = 0
-	void bvs(uint8_t);  // Branch if V = 1
-	void bvc(uint8_t);  // Branch if V = 0
+	void bcc(int8_t);	// Branch if C = 0
+	void bcs(int8_t);  // Branch if C = 1
+	void beq(int8_t);  // Branch if Z = 1
+	void bne(int8_t);  // Branch if Z = 0
+	void bmi(int8_t);  // Branch if N = 1
+	void bpl(int8_t);  // Branch if N = 0
+	void bvs(int8_t);  // Branch if V = 1
+	void bvc(int8_t);  // Branch if V = 0
 	void bit(uint16_t);  // Tests bits of value with A, sets flags only
 
 	// Shift and rotate
@@ -201,6 +202,7 @@ private:
 	bool B_flag;
 	bool V_flag;
 	bool S_flag;
+	bool unused_flag;
 
 	int clock_cycle;
 	// static uint8_t memory[];
@@ -214,8 +216,14 @@ private:
 	static const std::string instruction_names[];
 	void execute(uint8_t, uint16_t);
 	bool pages_differ(uint16_t, uint16_t);
+	uint16_t calculate_address_buggy(uint16_t);
 
-	std::ofstream f;
+	FILE *f;
+	// std::ofstream f;
+	int linenum;
+	void write_state();
+	void check_memory_for_value(uint8_t);
+	void print(int);
 
 };
 
