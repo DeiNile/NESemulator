@@ -218,8 +218,8 @@ private:
 	bool pages_differ(uint16_t, uint16_t);
 	uint16_t calculate_address_buggy(uint16_t);
 
-	FILE *f;
-	// std::ofstream f;
+	// FILE *f;
+	std::ofstream f;
 	int linenum;
 	void write_state();
 	void check_memory_for_value(uint8_t);

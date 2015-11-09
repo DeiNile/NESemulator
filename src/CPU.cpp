@@ -1,10 +1,12 @@
 #include "headers/CPU.hpp"
 #include "headers/Cartridge.hpp"
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <bitset>
 #include <vector>
 #include <iomanip>
+#include <boost/format.hpp>
 
 using namespace std;
 
@@ -20,8 +22,8 @@ CPU::CPU()
 	X  = 0;
 	Y  = 0;
 	clock_cycle = 0;
-	// f.open("my_log.txt", ofstream::out);
-	f = fopen("my_log.txt", "w");
+	f.open("my_log.txt", ofstream::out);
+	// f = fopen("my_log.txt", "w");
 	linenum = 1;
 }
 
@@ -930,16 +932,14 @@ void CPU::update_P()
 
 void CPU::write_state()
 {
-	fprintf(f, "\tA:%02X X:%02X Y:%02X P:%02X SP:%02X\n", A, X, Y, P, SP);	
+	f << boost::format("\tA:%02X X:%02X Y:%02X P:%02X SP:%02X\n") % (int)A % (int)X % 
+		(int)Y % (int)P % (int)SP;
 }
 
 void CPU::print_state()
 {
-	std::cerr << std::hex << "A:" << (int)A << " X:" << (int)X << " Y:" << 
-		(int)Y << " P:" << (int)P << " SP:" << (int)SP << "    " 
-		<< std::boolalpha << "C: " << C_flag << " Z: " << Z_flag << " I: " 
-		<< I_flag << " D: " << D_flag << " B: " << B_flag << " V: " << V_flag 
-		<< " S: " << S_flag << std::endl;
+	std::cout << boost::format("A:%02X X:%02X Y:%02X P:%02X SP:%02X\n") % 
+		(int)A % (int)X % (int)Y % (int)P % (int)SP;
 }
 
 
@@ -958,29 +958,33 @@ inline uint8_t CPU::rot_l(uint8_t value)
  */
 void CPU::fetch_and_execute() 
 {
-	fprintf(f, "%04X", PC);
+	std::ostringstream str;
+	str << boost::format("%04X") % (int)PC;
 	uint8_t opcode = read_memory(PC++);
 	uint8_t low = 0;
 	uint8_t high = 0;
-	fprintf(f, "  %02X ", opcode);
+	str << boost::format("  %02X ") % (int)opcode;
 	if (instruction_length[opcode] == 2) {
 		low = read_memory(PC++);
-		fprintf(f, "%02X%5s", low, "");
+		str << boost::format("%02X%5s") % (int)low % "";
 	} else if (instruction_length[opcode] == 3){
 		low = read_memory(PC++);
 		high = read_memory(PC++);
-		fprintf(f, "%02X %02X  ", low, high);
+		str << boost::format("%02X %02X  ") % (int)low % (int)high;
 	} else {
-		fprintf(f, "%7s", "");
+		str << boost::format("%7s") % "";
 	}
 	uint16_t address = calculate_address(opcode, high, low);
-	fprintf(f, "%s\t", instruction_names[opcode].c_str());
+	str << boost::format("%s\t") % instruction_names[opcode];
+	f << str.str();
+	// fprintf(f, "%s", str.str().c_str());
 	write_state();
 	execute(opcode, address);
 	update_P();
 	clock_cycle += execution_time[opcode];
 	if (PC == 0xC66E || linenum == 8992) {
-		fclose(f);
+		f.close();
+		// fclose(f);
 		exit(0);
 	}
 	linenum++;
