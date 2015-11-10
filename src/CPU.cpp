@@ -13,17 +13,16 @@ using namespace std;
 CPU::CPU()
 {
 	// SP = STACK_END_OFFSET;
-	SP = 0xFD;
 	P = STATUS_REGISTER_POWER_UP_STATE;
 	set_P_flags(0x24);
-	P = 0x24;
+	SP = 0xFD;
+	P  = 0x24;
 	PC = 0;
 	A  = 0;
 	X  = 0;
 	Y  = 0;
 	clock_cycle = 0;
 	f.open("my_log.txt", ofstream::out);
-	// f = fopen("my_log.txt", "w");
 	linenum = 1;
 }
 
@@ -964,6 +963,7 @@ void CPU::fetch_and_execute()
 	uint8_t low = 0;
 	uint8_t high = 0;
 	str << boost::format("  %02X ") % (int)opcode;
+
 	if (instruction_length[opcode] == 2) {
 		low = read_memory(PC++);
 		str << boost::format("%02X%5s") % (int)low % "";
@@ -975,16 +975,15 @@ void CPU::fetch_and_execute()
 		str << boost::format("%7s") % "";
 	}
 	uint16_t address = calculate_address(opcode, high, low);
+	
 	str << boost::format("%s\t") % instruction_names[opcode];
 	f << str.str();
-	// fprintf(f, "%s", str.str().c_str());
 	write_state();
 	execute(opcode, address);
 	update_P();
 	clock_cycle += execution_time[opcode];
 	if (PC == 0xC66E || linenum == 8992) {
 		f.close();
-		// fclose(f);
 		exit(0);
 	}
 	linenum++;
@@ -1052,9 +1051,9 @@ bool CPU::is_V()
 	return V_flag;
 }
 
-bool CPU::is_S()
+bool CPU::is_unused()
 {
-	return S_flag;
+	return unused_flag;
 }
 
 uint8_t CPU::get_X()

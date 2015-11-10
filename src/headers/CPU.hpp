@@ -7,7 +7,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <stdio.h>
 #include "Constants_opcodes.hpp"
 
 #define MEM_SIZE 65536
@@ -164,7 +163,7 @@ public:
 	bool is_D();
 	bool is_B();
 	bool is_V();
-	bool is_S();
+	bool is_unused();
 
 	void set_X(uint8_t);
 	void set_Y(uint8_t);
