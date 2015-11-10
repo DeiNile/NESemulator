@@ -25,7 +25,7 @@ Cartridge.o:	Cartridge_header.o Cartridge.cpp
 Cartridge_header.o:	Cartridge_header.cpp
 	$(CC) $(CFLAGS) Cartridge_header.cpp
 
-CPU_test.o:	CPU.o execute.o
+CPU_test.o:	CPU.o execute.o test/CPU_test.cpp
 	$(CC) $(CFLAGS) CPU.cpp execute.cpp test/CPU_test.cpp
 
 Cartridge_header_test.o:	Cartridge_header.o
