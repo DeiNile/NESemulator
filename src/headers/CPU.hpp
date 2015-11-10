@@ -28,7 +28,11 @@
 #define STACK_END_OFFSET 0xFF
 #define STATUS_REGISTER_POWER_UP_STATE 0x34
 
-#define INTERRUPT_VECTOR 0xFFFE
+#define IRQ_VECTOR 0xFFFE
+#define NMI_VECTOR 0xFFFA
+#define RESET_VECTOR 0xFFFC
+
+#define INTERRUPT_LATENCY 7
 
 using namespace std;
 
@@ -204,7 +208,6 @@ private:
 	bool unused_flag;
 
 	int clock_cycle;
-	// static uint8_t memory[];
 	static std::vector<uint8_t> memory;
 
 	// Length of an instruction in bytes
@@ -216,6 +219,7 @@ private:
 	void execute(uint8_t, uint16_t);
 	bool pages_differ(uint16_t, uint16_t);
 	uint16_t calculate_address_buggy(uint16_t);
+	// void interrupt_service();
 
 	// FILE *f;
 	std::ofstream f;

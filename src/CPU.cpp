@@ -685,9 +685,9 @@ void CPU::brk()
 	B_flag = true;
 	I_flag = true;
 	push(P | B_BIT);
-	PC = read_memory(INTERRUPT_VECTOR);
+	PC = read_memory(IRQ_VECTOR);
 	PC <<= BYTE_LENGTH;
-	PC |= read_memory(INTERRUPT_VECTOR + 1);
+	PC |= read_memory(IRQ_VECTOR + 1);
 }
 
 // Utils
@@ -951,6 +951,7 @@ inline uint8_t CPU::rot_l(uint8_t value)
 {
 	return (value >> 7) | (value << 1);
 }
+
 
 /*
  * UNFINISHED
