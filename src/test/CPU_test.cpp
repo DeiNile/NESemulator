@@ -52,7 +52,6 @@ struct CPU_instruction_fixture {
 		address = ((high << 8) | low);
 		value   = (rand() % (UINT8_MAX + 1)) + 1;
 		value_2 = (rand() % (UINT8_MAX + 1)) + 1;
-		// pc      = cpu.get_PC();
 		pc      = (rand() % (UINT16_MAX + 1)) + 1;
 		cpu.set_PC(pc);
 		cpu.write_memory(pc, opcode);
@@ -61,20 +60,6 @@ struct CPU_instruction_fixture {
 	};
 
 	~CPU_instruction_fixture() {
-
-	};
-};
-
-struct CPU_prg_fixture {
-	CPU cpu;
-	std::vector<uint8_t> v;
-
-	CPU_prg_fixture() {
-		v.resize(16384);
-		std::fill(v.begin(), v.end(), 1);
-	};
-
-	~CPU_prg_fixture() {
 
 	};
 };
@@ -743,7 +728,8 @@ BOOST_AUTO_TEST_CASE(pha_test)
 {
 	cpu.set_A(value);
 	cpu.pha();
-	BOOST_CHECK(cpu.pull() == value);
+	uint8_t temp = cpu.pull();
+	BOOST_CHECK(temp == value);
 }
 
 BOOST_AUTO_TEST_CASE(php_test)
@@ -1133,6 +1119,7 @@ BOOST_AUTO_TEST_CASE(eor_indirect_x_call_test)
 	cpu.write_memory(pc, EOR_INDIRECT_X);
 	cpu.write_memory((uint8_t)(low + value), low);
 	cpu.write_memory((uint8_t)(low + value + 1), high);
+	cpu.write_memory(address, value);
 	cpu.set_A(value_2);
 	cpu.set_X(value);
 	cpu.fetch_and_execute();
@@ -1402,6 +1389,17 @@ BOOST_AUTO_TEST_CASE(tya_call_test)
 	BOOST_CHECK(cpu.get_A() == value);
 }
 
+BOOST_AUTO_TEST_CASE(indirect_address_calculation_test)
+{
+	cpu.write_memory(pc, JMP_INDIRECT);
+	cpu.write_memory(pc + 1, 0xFF);
+	cpu.write_memory(pc + 2, 0x10);
+	cpu.write_memory(0x10FF, 0x05);
+	cpu.write_memory(0x1000, 0x05);
+	cpu.fetch_and_execute();
+	BOOST_CHECK(cpu.get_PC() == 0x0505);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -1425,23 +1423,6 @@ BOOST_AUTO_TEST_CASE(and_pages_differ_test)
 	cpu.write_memory(pc + 2, 0);
 	cpu.fetch_and_execute();
 	BOOST_CHECK(cpu.get_clock_cycles() == 5);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
-
-BOOST_FIXTURE_TEST_SUITE(load_prg_banks_tests, CPU_prg_fixture)
-
-BOOST_AUTO_TEST_CASE(prg_load_lower_bank_test)
-{
-	cpu.load_prg_bank_lower(v);
-	BOOST_CHECK(cpu.read_memory(0x8000) == 1);
-}
-
-BOOST_AUTO_TEST_CASE(prg_load_upper_bank_test)
-{
-	cpu.load_prg_bank_upper(v);
-	BOOST_CHECK(cpu.read_memory(0xC000) == 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

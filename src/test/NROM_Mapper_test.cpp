@@ -14,7 +14,7 @@ struct NROM_fixture {
     
     NROM_fixture() {
         cart = new Cartridge("nestest.nes");
-        mapper = new NROM_Mapper(*cart);
+        mapper = new NROM_Mapper(cart);
     };
 
     ~NROM_fixture() {

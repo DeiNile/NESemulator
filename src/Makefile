@@ -1,5 +1,5 @@
 MAIN = main.o
-OBJS = Cartridge.o CPU.o execute.o Cartridge_header.o NROM_Mapper.o
+OBJS = Cartridge.o CPU.o execute.o Cartridge_header.o NROM_Mapper.o CPU_memory.o Memory_Mapper.o
 TEST_OBJS = Cartridge_header_test.o Cartridge_test.o CPU_test.o NROM_Mapper_test.o
 BOOST = -l boost_unit_test_framework
 SRC = Cartridge.cpp CPU.cpp
@@ -15,7 +15,10 @@ all:	$(OBJS) $(MAIN)
 main.o:	CPU.o Cartridge.o main.cpp
 	$(CC) $(CFLAGS) main.cpp
 
-CPU.o:	execute.o CPU.cpp
+CPU_memory.o: CPU_memory.cpp
+	$(CC) $(CFLAGS) CPU_memory.cpp
+
+CPU.o:	CPU_memory.o execute.o CPU.cpp
 	$(CC) $(CFLAGS) CPU.cpp
 
 execute.o:	execute.cpp
@@ -30,7 +33,10 @@ Cartridge_header.o:	Cartridge_header.cpp
 egg.o:	headers/NROM_Mapper.hpp
 	$(CC) $(CFLAGS) headers/NROM_Mapper.hpp
 
-NROM_Mapper.o:	Cartridge.o Cartridge_header.o NROM_Mapper.cpp egg.o
+Memory_Mapper.o:	Memory_Mapper.cpp
+	$(CC) $(CFLAGS) Memory_Mapper.cpp
+
+NROM_Mapper.o:	Cartridge.o Cartridge_header.o NROM_Mapper.cpp
 	$(CC) $(CFLAGS) NROM_Mapper.cpp
 #$(MATH)
 

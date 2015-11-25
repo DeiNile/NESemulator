@@ -7,24 +7,24 @@
 #define PRG_SIZE 16384
 #define NUM_BANKS 8
 
-class NROM_Mapper : Memory_Mapper
+class NROM_Mapper : public Memory_Mapper
 {
 public:
-	NROM_Mapper(Cartridge &);
+    NROM_Mapper();
+	NROM_Mapper(Cartridge *);
+    virtual ~NROM_Mapper();
 
-    void write(uint16_t, uint8_t);
-    uint8_t read(uint16_t address);
-    
+    virtual void write(uint16_t, uint8_t);
+    virtual uint8_t read(uint16_t address);
 protected:
 private:
     std::vector<std::vector<uint8_t> > banks;
     std::vector<int> active_banks;
 	bool mirrored;
 
-    void load_prg(const std::vector<uint8_t> &);
-    int calc_bank(uint16_t);
-    int calc_address(uint16_t);
-    void switch_bank(int, int, int);
+    virtual void load_prg(const std::vector<uint8_t> &);
+    virtual int calc_bank(uint16_t);
+    virtual int calc_address(uint16_t);
 	void set_mirrored(int);
 };
 

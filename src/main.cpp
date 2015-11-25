@@ -2,6 +2,7 @@
 #include "headers/Utils.hpp"
 #include "headers/Cartridge.hpp"
 #include "headers/CPU.hpp"
+#include "headers/NROM_Mapper.hpp"
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
@@ -19,9 +20,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	Cartridge cart(argv[1]);
-	std::vector<uint8_t> rom = cart.get_prg_rom();
-	CPU cpu;
-	cpu.load_prg_bank_upper(rom);
+	CPU cpu(&cart);
 	cpu.set_PC(0xC000);
 	for (;;) {
 		cpu.fetch_and_execute();

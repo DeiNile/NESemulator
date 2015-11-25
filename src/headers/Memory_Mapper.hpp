@@ -2,6 +2,7 @@
 #define MEMORY_MAPPER_H
 
 #include "Cartridge.hpp"
+#include "Memory.hpp"
 #include <vector>
 #include <stdint.h>
 
@@ -9,22 +10,24 @@
 #define CHR_BANK_SIZE 1024
 
 
-class Memory_Mapper
+class Memory_Mapper : public Memory
 {
 public:
-    //	Memory_Mapper();
-	// ~Memory_Mapper();
+	Memory_Mapper();
+	Memory_Mapper(Cartridge *);
+	virtual ~Memory_Mapper() = 0;
 
-    void write(uint16_t, uint8_t);
-    uint8_t read(uint16_t);
+    virtual void write(uint16_t, uint8_t) = 0;
+    virtual uint8_t read(uint16_t) = 0;
+    virtual void set_cartridge(Cartridge *);
 protected:
-	std::vector<std::vector<uint8_t> > banks;
-    std::vector<int> active_banks;
-    
-    void load_prg(const std::vector<uint8_t> &);
-    int calc_bank(uint16_t);
-    int calc_address(uint16_t);
-    void switch_bank(int, int, int);
+	Cartridge *cartridge;
+
+    virtual void load_prg(const std::vector<uint8_t> &) = 0;
+    virtual int calc_bank(uint16_t) = 0;
+    virtual int calc_address(uint16_t) = 0;
+
+private:
 };
 
 #endif

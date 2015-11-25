@@ -24,9 +24,26 @@ CPU::CPU()
 	clock_cycle = 0;
 	f.open("my_log.txt", ofstream::out);
 	linenum = 1;
+	memory = new CPU_Memory();
 }
 
-std::vector<uint8_t> CPU::memory(MEM_SIZE);
+CPU::CPU(Cartridge *cart)
+{
+    P = STATUS_REGISTER_POWER_UP_STATE;
+	set_P_flags(0x24);
+	SP = 0xFD;
+	P  = 0x24;
+	PC = 0;
+	A  = 0;
+	X  = 0;
+	Y  = 0;
+	clock_cycle = 0;
+	f.open("my_log.txt", ofstream::out);
+	linenum = 1;
+	memory = new CPU_Memory(cart);
+}
+
+// std::vector<uint8_t> CPU::memory(MEM_SIZE);
 
 const unsigned char CPU::instruction_length[UINT8_MAX + 1] = {
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -125,7 +142,7 @@ const string CPU::instruction_names[UINT8_MAX + 1] = {
 void CPU::lda(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
-		A = read_memory(address);
+		A = memory->read(address);
 	} else {
 		A = address;
 	}
@@ -136,7 +153,7 @@ void CPU::lda(uint16_t address, bool read_from_memory)
 void CPU::ldx(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
-		X = read_memory(address);
+		X = memory->read(address);
 	} else {
 		X = address;
 	}
@@ -147,7 +164,7 @@ void CPU::ldx(uint16_t address, bool read_from_memory)
 void CPU::ldy(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
-		Y = read_memory(address);
+		Y = memory->read(address);
 	} else {
 		Y = address;
 	}
@@ -157,17 +174,17 @@ void CPU::ldy(uint16_t address, bool read_from_memory)
 
 void CPU::sta(uint16_t memory_address)
 {
-	write_memory(memory_address, A);
+	memory->write(memory_address, A);
 }
 
 void CPU::stx(uint16_t memory_address)
 {
-	write_memory(memory_address, X);
+	memory->write(memory_address, X);
 }
 
 void CPU::sty(uint16_t memory_address)
 {
-	write_memory(memory_address, Y);
+	memory->write(memory_address, Y);
 }
 
 // Arithmetic
@@ -177,7 +194,7 @@ void CPU::adc(uint16_t address, bool read_from_memory)
 	uint8_t prev_A = A;
 	uint8_t val;
 	if (read_from_memory) {
-		val = read_memory(address);
+		val = memory->read(address);
 	} else {
 		val = address;
 	}
@@ -200,30 +217,13 @@ void CPU::adc(uint16_t address, bool read_from_memory)
 
 void CPU::sbc(uint16_t address, bool read_from_memory)
 {
-	// uint8_t prev_A = A;
 	uint8_t val;
 	if (read_from_memory) {
-		val = read_memory(address);
+		val = memory->read(address);
 	} else {
 		val = address;
 	}
 	adc(~val, false);
-
-	// int sum = prev_A - val - !C_flag;
-	// if (sum > INT8_MAX || sum < INT8_MIN) {
-	// 	V_flag = true;
-	// } else {
-	// 	V_flag = false;
-	// }
-	// if (sum >= 0) {
-	// 	sec();
-	// } else {
-	// 	clc();
-	// }
-
-	// A = (uint8_t)sum;
-	// set_Z_flag(A);
-	// set_N_flag(A);
 }
 
 // Increment and decrement
@@ -231,8 +231,8 @@ void CPU::sbc(uint16_t address, bool read_from_memory)
 
 void CPU::inc(uint16_t address)
 {
-	int value = (read_memory(address) + 1) & UINT8_MAX;
-	write_memory(address, value);
+	int value = (memory->read(address) + 1) & UINT8_MAX;
+	memory->write(address, value);
 	set_Z_flag(value);
 	set_N_flag(value);
 }
@@ -254,8 +254,8 @@ void CPU::iny()
 void CPU::dec(uint16_t address)
 {
 
-	uint8_t value = read_memory(address) - 1;
-	write_memory(address, value);
+	uint8_t value = memory->read(address) - 1;
+	memory->write(address, value);
 	set_Z_flag(value);
 	set_N_flag(value);
 }
@@ -279,7 +279,7 @@ void CPU::dey()
 void CPU::_and(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
-		A &= read_memory(address);
+		A &= memory->read(address);
 	} else {
 		A &= address;
 	}
@@ -290,7 +290,7 @@ void CPU::_and(uint16_t address, bool read_from_memory)
 void CPU::ora(uint16_t address, bool read_from_memory) 
 {
 	if (read_from_memory) {
-		A |= read_memory(address);
+		A |= memory->read(address);
 	} else {
 		A |= address;
 	}
@@ -301,7 +301,7 @@ void CPU::ora(uint16_t address, bool read_from_memory)
 void CPU::eor(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
-		A ^= read_memory(address);
+		A ^= memory->read(address);
 	} else {
 		A ^= (uint8_t)address;
 	}
@@ -311,7 +311,6 @@ void CPU::eor(uint16_t address, bool read_from_memory)
 
 // Jump, branch, compare and test
 
-// INDIRECT VECTOR SHOULD NOT BE AT PAGE END
 void CPU::jmp(uint16_t address)
 {
 	PC = address;
@@ -321,7 +320,7 @@ void CPU::cmp(uint16_t address, bool read_from_memory)
 {
 	uint8_t mem;
 	if (read_from_memory) {
-		mem = read_memory(address);	
+		mem = memory->read(address);	
 	} else {
 		mem = address;
 	}
@@ -339,7 +338,7 @@ void CPU::cpx(uint16_t address, bool read_from_memory)
 {
 	uint8_t mem; 
 	if (read_from_memory) {
-		mem = read_memory(address);
+		mem = memory->read(address);
 	} else {
 		mem = address;
 	}
@@ -357,7 +356,7 @@ void CPU::cpy(uint16_t address, bool read_from_memory)
 {
 	uint8_t mem;
 	if (read_from_memory) {
-		mem = read_memory(address);
+		mem = memory->read(address);
 	} else {
 		mem = address;
 	}
@@ -429,7 +428,7 @@ void CPU::bvc(int8_t displacement)
 
 void CPU::bit(uint16_t address)
 {
-	uint8_t mem_val = read_memory(address);
+	uint8_t mem_val = memory->read(address);
 	V_flag = ((mem_val >> 6) & 1);
 	set_N_flag(mem_val);
 	mem_val = (A & mem_val);
@@ -441,7 +440,7 @@ void CPU::bit(uint16_t address)
 void CPU::asl(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
-		uint8_t mem_val = read_memory(address);
+		uint8_t mem_val = memory->read(address);
 		if ((mem_val & BYTE_SIGN_BIT_SET_MASK) == 0) {
 			C_flag = false;
 		} else {
@@ -450,7 +449,7 @@ void CPU::asl(uint16_t address, bool read_from_memory)
 		mem_val = (mem_val << 1) & FE;
 		set_Z_flag(mem_val);
 		set_N_flag(mem_val);
-		write_memory(address, mem_val);
+		memory->write(address, mem_val);
 
 	} else {
 		if ((A & BYTE_SIGN_BIT_SET_MASK) == 0) {
@@ -467,7 +466,7 @@ void CPU::asl(uint16_t address, bool read_from_memory)
 void CPU::lsr(uint16_t address, bool read_from_memory) 
 {
 	if (read_from_memory) {
-		int mem_val = read_memory(address);
+		int mem_val = memory->read(address);
 		if ((mem_val & 1) == 0) {
 			C_flag = false;
 		} else {
@@ -476,7 +475,7 @@ void CPU::lsr(uint16_t address, bool read_from_memory)
 		mem_val = (mem_val >> 1) & BYTE_SIGN_UNSET_MAX;
 		set_Z_flag(mem_val);
 		set_N_flag(mem_val);
-		write_memory(address, mem_val);
+		memory->write(address, mem_val);
 	} else {
 		if ((A & 1) == 0) {
 			C_flag = false;
@@ -494,7 +493,7 @@ void CPU::rol(uint16_t address, bool read_from_memory)
 	bool new_carry;
 	uint8_t new_val;
 	if (read_from_memory) {
-		new_val = read_memory(address);
+		new_val = memory->read(address);
 	} else {
 		new_val = A;
 	}
@@ -504,7 +503,7 @@ void CPU::rol(uint16_t address, bool read_from_memory)
 	set_Z_flag(new_val);
 	set_N_flag(new_val);
 	if (read_from_memory) {
-		write_memory(address, new_val);
+		memory->write(address, new_val);
 	} else {
 		A = new_val;
 	}
@@ -514,7 +513,7 @@ void CPU::ror(uint16_t address, bool read_from_memory)
 {
 	uint8_t new_val;
 	if (read_from_memory) {
-		new_val = read_memory(address);
+		new_val = memory->read(address);
 	} else {
 		new_val = A;
 	}
@@ -525,23 +524,10 @@ void CPU::ror(uint16_t address, bool read_from_memory)
 	set_Z_flag(new_val);
 	set_N_flag(new_val);
 	if(read_from_memory) {
-		write_memory(address, new_val);
+		memory->write(address, new_val);
 	} else {
 		A = new_val;
 	}
-
-
-
-	// C_flag = ((new_val & 1) == 0) ? false : true;
-	// new_val = rot_r(new_val);
-	// new_val &= ((C_flag << 7) & BYTE_SIGN_UNSET_MAX);
-	// set_Z_flag(new_val);
-	// set_N_flag(new_val);
-	// if (read_from_memory) {
-	// 	write_memory(address, new_val);
-	// } else {
-	// 	A = new_val;
-	// }
 }
 
 // Transfer
@@ -685,20 +671,21 @@ void CPU::brk()
 	B_flag = true;
 	I_flag = true;
 	push(P | B_BIT);
-	PC = read_memory(IRQ_VECTOR);
+	PC = memory->read(IRQ_VECTOR);
 	PC <<= BYTE_LENGTH;
-	PC |= read_memory(IRQ_VECTOR + 1);
+	PC |= memory->read(IRQ_VECTOR + 1);
 }
 
 // Utils
 
 /*
- * DEREFERENCE POINTER?
- *
  * Given an opcode and an operand, the function will resolve what the value
  * of the operand should be. This is achieved by looking at the addressing
  * mode for the instruction and thus retrieving the correct value.
  *
+ * @param opcode The opcode of the intruction
+ * @param high The high byte of the address
+ * @param low The low byte of the address
  * @return The address that the instruction needs to read values from
  */
 uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
@@ -738,23 +725,20 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 
 		case INDEXED_INDIRECT: // X
 			// Get the HIGH byte for address
-			ret = read_memory((uint8_t)(low + X + 1) & UINT8_MAX);
+			ret = memory->read((uint8_t)(low + X + 1) & UINT8_MAX);
 			ret <<= BYTE_LENGTH;
 			// Get the LOW byte for the address
-			ret |= read_memory((uint8_t)(low + X) & UINT8_MAX);
+			ret |= memory->read((uint8_t)(low + X) & UINT8_MAX);
 			break;
 
 		case INDIRECT:
-			// ret = read_memory(address + 1);
-			// ret <<= BYTE_LENGTH;
-			// ret |= read_memory(address);
 			ret = calculate_address_buggy(address);
 			break;
 
 		case INDIRECT_INDEXED: // Y
-			ret = read_memory((low + 1) & UINT8_MAX);
+			ret = memory->read((low + 1) & UINT8_MAX);
 			ret <<= BYTE_LENGTH;
-			ret |= read_memory(low);
+			ret |= memory->read(low);
 			ret = ((ret + Y) & UINT16_MAX);
 			differ = pages_differ(address, ret);
 			break;
@@ -789,34 +773,25 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 uint16_t CPU::calculate_address_buggy(uint16_t address) {
 	uint16_t ret;
 	if ((uint8_t)address == UINT8_MAX) {
-		ret = read_memory(address & 0xFF00);
+		ret = memory->read(address & 0xFF00);
 	} else {
-		ret = read_memory(address + 1);
+		ret = memory->read(address + 1);
 	}
 	ret <<= BYTE_LENGTH;
-	ret |= read_memory(address);
+	ret |= memory->read(address);
 	return ret;
 }
 
 
-inline uint8_t CPU::read_memory(uint16_t address)
+uint8_t CPU::read_memory(uint16_t address)
 {
-	return memory.at((int)address);
+	return memory->read(address);
 }
 
-inline void CPU::write_memory(uint16_t address, uint8_t value)
-{
-	memory.at(address) = value;
-	uint16_t base = address % 0x0800;
-	// if (value == 0x33 || value == 33) {
-	// 	std::cerr << std::hex << (int)egg << ", " << (int)address << "  " << (int)value << std::endl;
-	// }
-	if (address >= 0x0 && address <= 0x01FFF) {
-		memory.at(base + 0x800) = value;
-		memory.at(base + 0x1000) = value;
-		memory.at(base + 0x1800) = value;
-	}
 
+void CPU::write_memory(uint16_t address, uint8_t value)
+{
+	memory->write(address, value);
 }
 
 void CPU::load_prg_bank_lower(std::vector<uint8_t> &v)
@@ -824,7 +799,7 @@ void CPU::load_prg_bank_lower(std::vector<uint8_t> &v)
 	if (v.size() == PRG_ROM_UNITS) {
 		int j = PRG_LOWER_BANK_ADDRESS;
 		for (int i = 0; i < v.size(); i++, j++) {
-			write_memory(j, v.at(i));
+			memory->write(j, v.at(i));
 		}
 	} else {
 		std::cerr << "PRG ROM has illegal size: <" << v.size() << ">" << std::endl;
@@ -836,7 +811,7 @@ void CPU::load_prg_bank_upper(std::vector<uint8_t> &v)
 	if (v.size() == PRG_ROM_UNITS) {
 		int j = PRG_UPPER_BANK_ADDRESS;
 		for (int i = 0; i < v.size(); i++, j++) {
-			write_memory(j, v.at(i));
+			memory->write(j, v.at(i));
 		}
 	} else {
 		std::cerr << "PRG ROM has illegal size: <" << v.size() << ">" << std::endl;	
@@ -883,7 +858,7 @@ void CPU::set_P_flags(uint8_t value)
 
 void CPU::push(uint8_t val)
 {
-	memory.at(STACK_START + (SP--)) = val;
+    memory->write(STACK_START + (SP--), val);
 }
 
 void CPU::push_address(uint16_t address)
@@ -896,7 +871,7 @@ void CPU::push_address(uint16_t address)
 
 uint8_t CPU::pull()
 {
-	return memory.at(STACK_START + (++SP));
+    return memory->read(STACK_START + (++SP));
 }
 
 uint16_t CPU::pull_address()
@@ -960,17 +935,17 @@ void CPU::fetch_and_execute()
 {
 	std::ostringstream str;
 	str << boost::format("%04X") % (int)PC;
-	uint8_t opcode = read_memory(PC++);
+	uint8_t opcode = memory->read(PC++);
 	uint8_t low = 0;
 	uint8_t high = 0;
 	str << boost::format("  %02X ") % (int)opcode;
 
 	if (instruction_length[opcode] == 2) {
-		low = read_memory(PC++);
+		low = memory->read(PC++);
 		str << boost::format("%02X%5s") % (int)low % "";
 	} else if (instruction_length[opcode] == 3){
-		low = read_memory(PC++);
-		high = read_memory(PC++);
+		low = memory->read(PC++);
+		high = memory->read(PC++);
 		str << boost::format("%02X %02X  ") % (int)low % (int)high;
 	} else {
 		str << boost::format("%7s") % "";
@@ -1120,19 +1095,4 @@ void CPU::set_SP(uint8_t val)
 void CPU::set_P(uint8_t val)
 {
 	P = val;
-}
-
-void CPU::check_memory_for_value(uint8_t val)
-{
-	for (int i = 0; i < memory.size(); i++) {
-		if (memory.at(i) == val) {
-			std::cout << setw(5) << i << ", ";
-		}
-	}
-	std::cerr << std::endl;
-}
-
-void CPU::print(int i)
-{
-	std::cerr << (int)memory.at(i) << std::endl;
 }

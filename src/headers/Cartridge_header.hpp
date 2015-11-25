@@ -25,7 +25,7 @@ public:
 	uint8_t get_flag_6();
 	uint8_t get_flag_7();
 	uint8_t get_flag_9();
-	uint8_t get_nybble();
+	uint8_t get_mapper_num();
 	bool valid_header();
 	bool is_vertical();
 	bool is_horizontal();
@@ -45,7 +45,7 @@ private:
 	uint8_t flag_6;
 	uint8_t flag_7;
 	uint8_t flag_9;
-	uint8_t nybble;
+	uint8_t mapper_num;
 	std::string nes_name;
 	bool nes2;
 

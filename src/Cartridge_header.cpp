@@ -45,9 +45,9 @@ uint8_t Header::get_flag_9()
 	return flag_9;
 }
 
-uint8_t Header::get_nybble()
+uint8_t Header::get_mapper_num()
 {
-	return nybble;
+	return mapper_num;
 }
 
 bool Header::valid_header()
@@ -135,6 +135,6 @@ void Header::update_flags()
 		nes2 = false;
 	}
 
-	nybble = (flag_7 & UPPER_NYBBLE_MASK) | (flag_6 >> NYBBLE_LENGTH);
+	mapper_num = (flag_7 & UPPER_NYBBLE_MASK) | (flag_6 >> NYBBLE_LENGTH);
 }
 

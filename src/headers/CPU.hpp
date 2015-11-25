@@ -7,7 +7,12 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+
 #include "Constants_opcodes.hpp"
+#include "Memory.hpp"
+#include "CPU_memory.hpp"
+#include "NROM_Mapper.hpp"
+#include "Cartridge.hpp"
 
 #define MEM_SIZE 65536
 #define ZERO_PAGE_WRAPAROUND 0xFF
@@ -57,6 +62,7 @@ public:
 		};
 
 	CPU();
+    CPU(Cartridge *);
 
 	uint8_t read_memory(uint16_t); // Should be private and inline
 	void write_memory(uint16_t, uint8_t); // Should be private and inline
@@ -208,7 +214,6 @@ private:
 	bool unused_flag;
 
 	int clock_cycle;
-	static std::vector<uint8_t> memory;
 
 	// Length of an instruction in bytes
 	static const unsigned char instruction_length[];
@@ -219,14 +224,11 @@ private:
 	void execute(uint8_t, uint16_t);
 	bool pages_differ(uint16_t, uint16_t);
 	uint16_t calculate_address_buggy(uint16_t);
-	// void interrupt_service();
+    Memory *memory;
 
-	// FILE *f;
 	std::ofstream f;
 	int linenum;
 	void write_state();
-	void check_memory_for_value(uint8_t);
-	void print(int);
 
 };
 

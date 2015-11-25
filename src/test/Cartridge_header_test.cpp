@@ -63,9 +63,9 @@ BOOST_AUTO_TEST_CASE(size_of_chr_in_8KB_test)
 	BOOST_CHECK(header->get_chr_size_8KB() == 64);
 }
 
-BOOST_AUTO_TEST_CASE(nybble_test)
+BOOST_AUTO_TEST_CASE(mapper_number_test)
 {
-	BOOST_CHECK(header->get_nybble() == 0x11);
+	BOOST_CHECK(header->get_mapper_num() == 0x11);
 }
 
 BOOST_AUTO_TEST_CASE(NTSC_system_test)
