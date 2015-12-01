@@ -373,6 +373,7 @@ void CPU::cpy(uint16_t address, bool read_from_memory)
 void CPU::bcc(int8_t displacement)
 {
 	if (!C_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -380,6 +381,7 @@ void CPU::bcc(int8_t displacement)
 void CPU::bcs(int8_t displacement)
 {
 	if (C_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -387,6 +389,7 @@ void CPU::bcs(int8_t displacement)
 void CPU::beq(int8_t displacement) 
 {
 	if (Z_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -394,6 +397,7 @@ void CPU::beq(int8_t displacement)
 void CPU::bne(int8_t displacement)
 {
 	if (!Z_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -401,6 +405,7 @@ void CPU::bne(int8_t displacement)
 void CPU::bmi(int8_t displacement)
 {
 	if (N_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -408,6 +413,7 @@ void CPU::bmi(int8_t displacement)
 void CPU::bpl(int8_t displacement)
 {
 	if (!N_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -415,6 +421,7 @@ void CPU::bpl(int8_t displacement)
 void CPU::bvs(int8_t displacement) 
 {
 	if (V_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -422,6 +429,7 @@ void CPU::bvs(int8_t displacement)
 void CPU::bvc(int8_t displacement) 
 {
 	if (!V_flag) {
+		increment_on_page_boundary();
 		PC += displacement;
 	}
 }
@@ -745,6 +753,7 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 
 		case RELATIVE:
 			ret = address;
+			// PAGE BOUNDARY
 			break;
 
 		case ZERO_PAGE:
@@ -906,8 +915,8 @@ void CPU::update_P()
 
 void CPU::write_state()
 {
-	f << boost::format("\tA:%02X X:%02X Y:%02X P:%02X SP:%02X\n") % (int)A % (int)X % 
-		(int)Y % (int)P % (int)SP;
+	f << boost::format("\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3d\n") % (int)A % (int)X % 
+		(int)Y % (int)P % (int)SP % ((clock_cycle * 3) % 341);
 }
 
 void CPU::print_state()
@@ -952,12 +961,16 @@ void CPU::fetch_and_execute()
 	}
 	uint16_t address = calculate_address(opcode, high, low);
 	
+	current_address = address;
+	last_address = ((high << BYTE_LENGTH) | low);
+	
 	str << boost::format("%s\t") % instruction_names[opcode];
 	f << str.str();
+
 	write_state();
 	execute(opcode, address);
-	update_P();
 	clock_cycle += execution_time[opcode];
+	update_P();
 	if (PC == 0xC66E || linenum == 8992) {
 		f.close();
 		exit(0);
@@ -969,6 +982,15 @@ bool CPU::pages_differ(uint16_t address_1, uint16_t address_2)
 {
 	const uint16_t high_mask = (UINT8_MAX << BYTE_LENGTH);
 	return (address_1 & high_mask) != (address_2 & high_mask);
+}
+
+void CPU::increment_on_page_boundary()
+{
+	if (pages_differ(current_address, last_address)) {
+		clock_cycle += 2;
+	} else {
+		clock_cycle++;
+	}
 }
 
 // Functions strictly for testing purposes
