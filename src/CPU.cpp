@@ -84,21 +84,21 @@ const unsigned char CPU::execution_time[UINT8_MAX + 1] = {
 };
 
 const unsigned char CPU::opcode_addressing_mode[UINT8_MAX + 1] = {
-	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+	6,  7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-	1, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+	1,  7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
+	6,  7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-	6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 8, 1, 1, 1,
+	6,  7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 8, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	5,  7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
-	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	5,  7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 13, 13, 6, 3, 6, 3, 2, 2, 3, 3,
-	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	5,  7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
-	5, 7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
+	5,  7, 5, 7, 11, 11, 11, 11, 6, 5, 6, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
 };
 
@@ -373,7 +373,8 @@ void CPU::cpy(uint16_t address, bool read_from_memory)
 void CPU::bcc(int8_t displacement)
 {
 	if (!C_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -381,7 +382,8 @@ void CPU::bcc(int8_t displacement)
 void CPU::bcs(int8_t displacement)
 {
 	if (C_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -389,7 +391,8 @@ void CPU::bcs(int8_t displacement)
 void CPU::beq(int8_t displacement) 
 {
 	if (Z_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -397,7 +400,8 @@ void CPU::beq(int8_t displacement)
 void CPU::bne(int8_t displacement)
 {
 	if (!Z_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -405,7 +409,8 @@ void CPU::bne(int8_t displacement)
 void CPU::bmi(int8_t displacement)
 {
 	if (N_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -413,7 +418,8 @@ void CPU::bmi(int8_t displacement)
 void CPU::bpl(int8_t displacement)
 {
 	if (!N_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -421,7 +427,8 @@ void CPU::bpl(int8_t displacement)
 void CPU::bvs(int8_t displacement) 
 {
 	if (V_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -429,7 +436,8 @@ void CPU::bvs(int8_t displacement)
 void CPU::bvc(int8_t displacement) 
 {
 	if (!V_flag) {
-		increment_on_page_boundary();
+		clock_cycle++;
+		increment_on_page_crossing();
 		PC += displacement;
 	}
 }
@@ -700,9 +708,9 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 {
 	uint16_t ret = 0;
 	uint16_t address = high;
-	bool differ = false;
 	address <<= BYTE_LENGTH;
 	address |= low;
+	base_address = address;
 	addressing_mode_t mode = 
 			static_cast<addressing_mode_t>(opcode_addressing_mode[opcode]);
 
@@ -713,12 +721,12 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 
 		case ABSOLUTE_X:
 			ret = (address + X) & UINT16_MAX;
-			differ = pages_differ(address, ret);
+			base_address = address;
 			break;
 
 		case ABSOLUTE_Y:
 			ret = (address + Y) & UINT16_MAX;
-			differ = pages_differ(address, ret);
+			base_address = address;
 			break;
 
 		case ACCUMULATOR:
@@ -747,8 +755,8 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 			ret = memory->read((low + 1) & UINT8_MAX);
 			ret <<= BYTE_LENGTH;
 			ret |= memory->read(low);
+			base_address = ret;
 			ret = ((ret + Y) & UINT16_MAX);
-			differ = pages_differ(address, ret);
 			break;
 
 		case RELATIVE:
@@ -772,10 +780,8 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 		default:
 			std::cerr << "invalid opcode <0x" << std::hex << opcode << ">" << std::endl;
 	}
+	final_address = ret;
 
-	if (differ) {
-		clock_cycle++;
-	}
 	return ret;
 }
 
@@ -916,7 +922,7 @@ void CPU::update_P()
 void CPU::write_state()
 {
 	f << boost::format("\tA:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3d\n") % (int)A % (int)X % 
-		(int)Y % (int)P % (int)SP % ((clock_cycle * 3) % 341);
+		(int)Y % (int)P % (int)SP % (int)((clock_cycle * 3) % 341);
 }
 
 void CPU::print_state()
@@ -961,13 +967,14 @@ void CPU::fetch_and_execute()
 	}
 	uint16_t address = calculate_address(opcode, high, low);
 	
-	current_address = address;
-	last_address = ((high << BYTE_LENGTH) | low);
+	// final_address = address;
+	// base_address = ((high << BYTE_LENGTH) | low);
 	
 	str << boost::format("%s\t") % instruction_names[opcode];
 	f << str.str();
 
 	write_state();
+	
 	execute(opcode, address);
 	clock_cycle += execution_time[opcode];
 	update_P();
@@ -980,15 +987,13 @@ void CPU::fetch_and_execute()
 
 bool CPU::pages_differ(uint16_t address_1, uint16_t address_2)
 {
-	const uint16_t high_mask = (UINT8_MAX << BYTE_LENGTH);
+	const uint16_t high_mask = ((UINT8_MAX << BYTE_LENGTH) | 0);
 	return (address_1 & high_mask) != (address_2 & high_mask);
 }
 
-void CPU::increment_on_page_boundary()
+void CPU::increment_on_page_crossing()
 {
-	if (pages_differ(current_address, last_address)) {
-		clock_cycle += 2;
-	} else {
+	if (pages_differ(final_address, base_address)) {
 		clock_cycle++;
 	}
 }

@@ -96,7 +96,7 @@
 #define LDX_ZERO_PAGE 	0xA6
 #define LDX_ZERO_PAGE_Y 0xB6
 #define LDX_ABSOLUTE 	0xAE
-#define LDX_ABSOLUTE_X 	0xBE
+#define LDX_ABSOLUTE_Y 	0xBE
 
 #define LDY_IMMEDIATE 	0xA0
 #define LDY_ZERO_PAGE 	0xA4

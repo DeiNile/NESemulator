@@ -16,9 +16,11 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			adc(address, false);
 			break;
 
-		case ADC_ZERO_PAGE:case ADC_ZERO_PAGE_X: 
-		case ADC_ABSOLUTE: case ADC_ABSOLUTE_X: case ADC_ABSOLUTE_Y:
-		case ADC_INDIRECT_X: case ADC_INDIRECT_Y:
+		case ADC_ABSOLUTE_X: case ADC_ABSOLUTE_Y: case ADC_INDIRECT_Y:
+			increment_on_page_crossing();
+
+		case ADC_ZERO_PAGE: case ADC_ZERO_PAGE_X: 
+		case ADC_ABSOLUTE: case ADC_INDIRECT_X:
 			adc(address, true);
 			break;
 
@@ -27,9 +29,11 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			_and(address, false);
 			break;
 
+		case AND_ABSOLUTE_X: case AND_ABSOLUTE_Y: case AND_INDIRECT_Y:
+			increment_on_page_crossing();
+
 		case AND_ZERO_PAGE: case AND_ZERO_PAGE_X:
-		case AND_ABSOLUTE: case AND_ABSOLUTE_X: case AND_ABSOLUTE_Y:
-		case AND_INDIRECT_X: case AND_INDIRECT_Y:
+		case AND_ABSOLUTE: case AND_INDIRECT_X:
 			_and(address, true);
 			break;
 
@@ -119,9 +123,11 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			cmp(address, false);
 			break;
 
+		case CMP_ABSOLUTE_X: case CMP_ABSOLUTE_Y: case CMP_INDIRECT_Y:
+			increment_on_page_crossing();
+
 		case CMP_ZERO_PAGE: case CMP_ZERO_PAGE_X:
-		case CMP_ABSOLUTE: case CMP_ABSOLUTE_X: case CMP_ABSOLUTE_Y:
-		case CMP_INDIRECT_X: case CMP_INDIRECT_Y:
+		case CMP_ABSOLUTE: case CMP_INDIRECT_X:
 			cmp(address, true);
 			break;
 
@@ -164,9 +170,11 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			eor(address, false);
 			break;
 
+		case EOR_ABSOLUTE_X: case EOR_ABSOLUTE_Y: case EOR_INDIRECT_Y:
+			increment_on_page_crossing();
+
 		case EOR_ZERO_PAGE: case EOR_ZERO_PAGE_X:
-		case EOR_ABSOLUTE: case EOR_ABSOLUTE_X: case EOR_ABSOLUTE_Y:
-		case EOR_INDIRECT_X: case EOR_INDIRECT_Y:
+		case EOR_ABSOLUTE: case EOR_INDIRECT_X:
 			eor(address, true);
 			break;
 
@@ -201,9 +209,11 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			lda(address, false);
 			break;
 
+		case LDA_ABSOLUTE_X: case LDA_ABSOLUTE_Y: case LDA_INDIRECT_Y:
+			increment_on_page_crossing();
+
 		case LDA_ZERO_PAGE: case LDA_ZERO_PAGE_X:
-		case LDA_ABSOLUTE: case LDA_ABSOLUTE_X: case LDA_ABSOLUTE_Y:
-		case LDA_INDIRECT_X: case LDA_INDIRECT_Y:
+		case LDA_ABSOLUTE: case LDA_INDIRECT_X:
 			lda(address, true);
 			break;
 
@@ -212,8 +222,10 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			ldx(address, false);
 			break;
 
-		case LDX_ZERO_PAGE: case LDX_ZERO_PAGE_Y:
-		case LDX_ABSOLUTE: case LDX_ABSOLUTE_X:
+		case LDX_ABSOLUTE_Y:
+			increment_on_page_crossing();
+
+		case LDX_ZERO_PAGE: case LDX_ZERO_PAGE_Y: case LDX_ABSOLUTE:
 			ldx(address, true);
 			break;
 
@@ -222,8 +234,10 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			ldy(address, false);
 			break;
 
-		case LDY_ZERO_PAGE: case LDY_ZERO_PAGE_X:
-		case LDY_ABSOLUTE: case LDY_ABSOLUTE_X:
+		case LDY_ABSOLUTE_X:
+			increment_on_page_crossing();
+
+		case LDY_ZERO_PAGE: case LDY_ZERO_PAGE_X: case LDY_ABSOLUTE:
 			ldy(address, true);
 			break;
 
@@ -248,9 +262,11 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			ora(address, false);
 			break;
 
+		case ORA_ABSOLUTE_X: case ORA_ABSOLUTE_Y: case ORA_INDIRECT_Y:
+			increment_on_page_crossing();
+
 		case ORA_ZERO_PAGE: case ORA_ZERO_PAGE_X:
-		case ORA_ABSOLUTE: case ORA_ABSOLUTE_X: case ORA_ABSOLUTE_Y:
-		case ORA_INDIRECT_X: case ORA_INDIRECT_Y:
+		case ORA_ABSOLUTE: case ORA_INDIRECT_X:
 			ora(address, true);
 			break;
 
@@ -311,9 +327,11 @@ void CPU::execute(uint8_t opcode, uint16_t address)
 			sbc(address, false);
 			break;
 
+		case SBC_ABSOLUTE_X: case SBC_ABSOLUTE_Y: case SBC_INDIRECT_Y:
+			increment_on_page_crossing();
+
 		case SBC_ZERO_PAGE: case SBC_ZERO_PAGE_X:
-		case SBC_ABSOLUTE: case SBC_ABSOLUTE_X: case SBC_ABSOLUTE_Y:
-		case SBC_INDIRECT_X: case SBC_INDIRECT_Y:
+		case SBC_ABSOLUTE: case SBC_INDIRECT_X:
 			sbc(address, true);
 			break;
 

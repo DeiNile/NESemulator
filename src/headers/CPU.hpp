@@ -203,8 +203,8 @@ private:
 	uint8_t X;  // index register, 8 bit
 	uint8_t Y;  // index register, 8 bit
 
-	uint16_t last_address;
-	uint16_t current_address;
+	uint16_t base_address;
+	uint16_t final_address;
 
 	bool N_flag;
 	bool C_flag;
@@ -228,7 +228,7 @@ private:
 	void execute(uint8_t, uint16_t);
 	bool pages_differ(uint16_t, uint16_t);
 	uint16_t calculate_address_buggy(uint16_t);
-	void increment_on_page_boundary();
+	void increment_on_page_crossing();
 
 	std::ofstream f;
 	int linenum;
