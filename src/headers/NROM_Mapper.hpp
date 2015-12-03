@@ -16,6 +16,7 @@ public:
 
     virtual void write(uint16_t, uint8_t);
     virtual uint8_t read(uint16_t address);
+    virtual uint16_t read_address(uint16_t);
 protected:
 private:
     std::vector<std::vector<uint8_t> > banks;

@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <boost/format.hpp>
 
+#define PPU_CRTL_ADDRESS 0x2000
+
 using namespace std;
 
 CPU::CPU()
@@ -682,11 +684,11 @@ void CPU::nop()
 
 void CPU::brk()
 {
-	push((PC >> BYTE_LENGTH) & UINT8_MAX);
-	push(PC & UINT8_MAX);
+	push_address(PC);
 	B_flag = true;
-	I_flag = true;
-	push(P | B_BIT);
+	update_P();
+	push(P);
+	sei();
 	PC = memory->read(IRQ_VECTOR);
 	PC <<= BYTE_LENGTH;
 	PC |= memory->read(IRQ_VECTOR + 1);
@@ -864,7 +866,8 @@ void CPU::set_P_flags(uint8_t value)
 	value >>= 1;
 	B_flag = (value & 1) ? true : false;
 	value >>= 1;
-	unused_flag = (value & 1) ? true : false;
+	// unused_flag = (value & 1) ? true : false;
+	unused_flag = true;
 	value >>= 1;
 	V_flag = (value & 1) ? true : false;
 	value >>= 1;
@@ -949,6 +952,9 @@ inline uint8_t CPU::rot_l(uint8_t value)
 void CPU::fetch_and_execute() 
 {
 	std::ostringstream str;
+
+	handle_interrupts();
+
 	str << boost::format("%04X") % (int)PC;
 	uint8_t opcode = memory->read(PC++);
 	uint8_t low = 0;
@@ -996,6 +1002,52 @@ void CPU::increment_on_page_crossing()
 	if (pages_differ(final_address, base_address)) {
 		clock_cycle++;
 	}
+}
+
+void CPU::handle_interrupts()
+{
+	// RESET
+
+	// Execute NMI when NMI is enabled by PPU
+	if ((memory->read(PPU_CRTL_ADDRESS) & BYTE_SIGN_BIT_SET_MASK)) {
+		nmi();
+	}
+	// Execute IRQ when Interrupt disable flag is clear
+	if (!I_flag) {
+		irq();
+	}
+}
+
+void CPU::nmi()
+{
+	push_address(PC);
+	push(P & ALL_P_FLAGS_SET_B_FLAG_UNSET);
+	sei();
+	PC = (memory->read(NMI_VECTOR + 1) << BYTE_LENGTH);
+	PC |= memory->read(NMI_VECTOR);
+	clock_cycle += INTERRUPT_LATENCY;
+	// if ((memory->read(0x2000) & 0x80)) {
+	// }
+}
+
+void CPU::reset()
+{
+	PC = memory->read_address(RESET_VECTOR);
+	SP -= 3;
+	clock_cycle += 7;
+}
+
+
+void CPU::irq()
+{
+	push_address(PC);
+	php();
+	sei();
+	PC = (memory->read(IRQ_VECTOR + 1) << BYTE_LENGTH);
+	PC |= memory->read(IRQ_VECTOR);
+	clock_cycle += 7;
+	// if (!I_flag) {
+	// }
 }
 
 // Functions strictly for testing purposes
@@ -1109,6 +1161,11 @@ void CPU::set_N(bool val)
 	N_flag = val;
 }
 
+void CPU::set_I(bool val)
+{
+	I_flag = val;
+}
+
 void CPU::set_V(bool val)
 {
 	V_flag = val;
@@ -1122,4 +1179,5 @@ void CPU::set_SP(uint8_t val)
 void CPU::set_P(uint8_t val)
 {
 	P = val;
+	set_P_flags(P);
 }

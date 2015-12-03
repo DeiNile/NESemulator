@@ -185,6 +185,12 @@ public:
 	void set_Z(bool);
 	void set_N(bool);
 	void set_V(bool);
+	void set_I(bool);
+
+
+	void nmi();
+	void reset();
+	void irq();
 
 	static uint8_t rot_l(uint8_t);
 	static uint8_t rot_r(uint8_t);
@@ -225,10 +231,13 @@ private:
 	static const unsigned char execution_time[];
 	static const unsigned char opcode_addressing_mode[];
 	static const std::string instruction_names[];
+	
 	void execute(uint8_t, uint16_t);
 	bool pages_differ(uint16_t, uint16_t);
 	uint16_t calculate_address_buggy(uint16_t);
 	void increment_on_page_crossing();
+	void handle_interrupts();
+
 
 	std::ofstream f;
 	int linenum;

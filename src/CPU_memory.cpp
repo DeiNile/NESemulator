@@ -17,6 +17,7 @@
 #define PPU_REGISTER_MASK 0x7
 #define MOST_SIGNIFICANT_BIT 0x8000
 #define MEM_SIZE 0x8000
+#define BYTE_LENGTH 8
 
 
 CPU_Memory::CPU_Memory() : Memory()
@@ -43,6 +44,19 @@ inline uint8_t CPU_Memory::read(uint16_t address)
 	} else {
 		return prg_rom->read(address);
 	}
+}
+
+uint16_t CPU_Memory::read_address(uint16_t address)
+{
+	uint16_t ret = 0;
+	if (address < MEM_SIZE) {
+		ret = memory.at(address + 1) << BYTE_LENGTH;
+		ret |= memory.at(address);
+	} else {
+		ret = prg_rom->read(address + 1) << BYTE_LENGTH;
+		ret |= prg_rom->read(address);
+	}
+	return ret;
 }
 
 inline void CPU_Memory::write(uint16_t address, uint8_t val)

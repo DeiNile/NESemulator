@@ -6,6 +6,7 @@
 #define LOWEST_THREE_BYTES 0x0FFF
 #define LOWEST_THREE_BITS 0x7
 #define HIGHEST_BYTE_TO_LOWEST 12
+#define BYTE_LENGTH 8
 
 NROM_Mapper::NROM_Mapper() : Memory_Mapper()
 {
@@ -32,6 +33,13 @@ inline uint8_t NROM_Mapper::read(uint16_t address)
     int bank = calc_bank(address);
     int addr = calc_address(address);
 	return banks.at(bank).at(addr);
+}
+
+uint16_t NROM_Mapper::read_address(uint16_t address)
+{
+    uint16_t ret = read(address + 1) << BYTE_LENGTH;
+    ret |= read(address);
+    return ret;
 }
 
 inline void NROM_Mapper::write(uint16_t address, uint8_t val)

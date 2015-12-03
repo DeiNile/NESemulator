@@ -11,6 +11,7 @@ public:
 
 	virtual uint8_t read(uint16_t) = 0;
 	virtual void write(uint16_t, uint8_t) = 0;
+	virtual uint16_t read_address(uint16_t) = 0;
 protected:
 private:
 	

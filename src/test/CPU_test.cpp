@@ -33,6 +33,21 @@ struct CPU_fixture {
 
 	};
 };
+	
+struct CPU_interrupt_fixture {
+	CPU cpu;
+	uint16_t pc;
+	uint8_t p;
+
+	CPU_interrupt_fixture() {
+		srand(time(NULL));
+		pc = (rand() + 1) % (UINT16_MAX + 1);
+		p  = ((rand() + 1) % (UINT8_MAX + 1) | UNUSED_BIT);
+		cpu.set_PC(pc);
+		cpu.set_P(p);
+		cpu.write_memory(0x1110, RTI);
+	};
+};
 
 struct CPU_instruction_fixture {
 	CPU cpu;
@@ -57,6 +72,12 @@ struct CPU_instruction_fixture {
 		cpu.write_memory(pc, opcode);
 		cpu.write_memory(pc + 1, low);
 		cpu.write_memory(pc + 2, high);
+		// Ensure that NMI is disabled
+		cpu.write_memory(0x2000, 0);
+		// Ensure that I  disable flag is set
+		cpu.set_I(true);
+		cpu.update_P();
+
 	};
 
 	~CPU_instruction_fixture() {
@@ -511,10 +532,8 @@ BOOST_AUTO_TEST_CASE(bpl_negative_test)
 BOOST_AUTO_TEST_CASE(bpl_positive_test)
 {
 	cpu.set_N(false);
-	// cpu.set_PC(value_2);
 	cpu.set_PC(address);
 	cpu.bpl(value);
-	// BOOST_CHECK(cpu.get_PC() == (int8_t)value + value_2);
 	BOOST_CHECK(cpu.get_PC() == address + (int8_t)value);
 }
 
@@ -524,7 +543,7 @@ BOOST_AUTO_TEST_CASE(brk_test)
 	cpu.set_P(value);
 	cpu.brk();
 	BOOST_CHECK(cpu.is_B());
-	BOOST_CHECK(cpu.pull() == (value | B_BIT));
+	BOOST_CHECK(cpu.pull() == (value | B_BIT | UNUSED_BIT));
 	BOOST_CHECK(cpu.pull() == (uint8_t)address);
 	BOOST_CHECK(cpu.pull() == ((uint8_t)(address >> BYTE_LENGTH)));
 }
@@ -532,10 +551,8 @@ BOOST_AUTO_TEST_CASE(brk_test)
 BOOST_AUTO_TEST_CASE(bvs_with_overflow_test)
 {
 	cpu.set_V(true);
-	// cpu.set_PC(value_2);
 	cpu.set_PC(address);
 	cpu.bvs(value);
-	// BOOST_CHECK(cpu.get_PC() == (int8_t)value + value_2);
 	BOOST_CHECK(cpu.get_PC() == address + (int8_t)value);
 }
 
@@ -737,7 +754,7 @@ BOOST_AUTO_TEST_CASE(php_test)
 	cpu.set_P_flags(value);
 	cpu.php();
 	uint8_t t = cpu.pull();
-	BOOST_CHECK(t == (value | 0x10));
+	BOOST_CHECK(t == (value | B_BIT | UNUSED_BIT));
 }
 
 BOOST_AUTO_TEST_CASE(plp_test)
@@ -793,6 +810,50 @@ BOOST_AUTO_TEST_CASE(rti_test)
 	BOOST_CHECK(cpu.get_P() == (value | UNUSED_BIT));
 	BOOST_CHECK(cpu.get_PC() == address);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_FIXTURE_TEST_SUITE(CPU_interrupt_tests, CPU_interrupt_fixture)
+
+BOOST_AUTO_TEST_CASE(nmi_test)
+{
+	cpu.write_memory(0x2000, 0x80); // ensure that the nmi is not prevented by PPU
+	cpu.write_memory(NMI_VECTOR, 0x10);
+	cpu.write_memory(NMI_VECTOR + 1, 0x11);
+	cpu.nmi();
+	BOOST_CHECK(cpu.get_PC() == 0x1110);
+	cpu.write_memory(0x2000, 0); // disable NMI
+	cpu.fetch_and_execute();
+	BOOST_CHECK(cpu.get_PC() == pc);
+	BOOST_CHECK(cpu.get_P() == (p & ALL_P_FLAGS_SET_B_FLAG_UNSET));
+}
+
+BOOST_AUTO_TEST_CASE(reset_test)
+{
+	cpu.write_memory(RESET_VECTOR, 0x10);
+	cpu.write_memory(RESET_VECTOR + 1, 0x11);
+	int s = (rand() + 1) % (UINT8_MAX + 1);
+	cpu.set_SP(s);
+	cpu.reset();
+	BOOST_CHECK(cpu.get_SP() == (s - 3));
+}
+
+BOOST_AUTO_TEST_CASE(irq_test)
+{
+	cpu.set_I(false);
+	cpu.set_P(p & 0xFB);
+	cpu.update_P();
+	cpu.write_memory(IRQ_VECTOR, 0x10);
+	cpu.write_memory(IRQ_VECTOR + 1, 0x11);
+	cpu.irq();
+	BOOST_CHECK(cpu.get_PC() == 0x1110);
+	cpu.fetch_and_execute();
+	BOOST_CHECK(cpu.get_PC() == pc);
+	BOOST_CHECK(cpu.get_P() == ((p | B_BIT) & 0xFB));
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -1240,9 +1301,9 @@ BOOST_AUTO_TEST_CASE(pha_call_test)
 BOOST_AUTO_TEST_CASE(php_call_test)
 {
 	cpu.write_memory(pc, PHP);
-	cpu.set_P_flags(value);
+	cpu.set_P_flags(value | 0x4); // set Interrupt clear flag
 	cpu.fetch_and_execute();
-	BOOST_CHECK(cpu.pull() == (value | 0x10));
+	BOOST_CHECK(cpu.pull() == (value | 0x4 | B_BIT | UNUSED_BIT));
 }
 
 BOOST_AUTO_TEST_CASE(pla_call_test)

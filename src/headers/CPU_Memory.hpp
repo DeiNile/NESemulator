@@ -14,6 +14,7 @@ public:
 
 	virtual uint8_t read(uint16_t);
 	virtual void write(uint16_t, uint8_t);
+	virtual uint16_t read_address(uint16_t);
 protected:
 private:
 	std::vector<uint8_t> memory;
