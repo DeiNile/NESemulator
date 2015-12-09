@@ -12,7 +12,7 @@
 
 using namespace std;
 
-CPU::CPU()
+CPU::CPU(Console *con)
 {
 	// SP = STACK_END_OFFSET;
 	P = STATUS_REGISTER_POWER_UP_STATE;
@@ -26,10 +26,11 @@ CPU::CPU()
 	clock_cycle = 0;
 	f.open("my_log.txt", ofstream::out);
 	linenum = 1;
-	memory = new CPU_Memory();
+	console = con;
+	memory = new CPU_Memory(console);
 }
 
-CPU::CPU(Cartridge *cart)
+CPU::CPU(Cartridge *cart, Console *con)
 {
     P = STATUS_REGISTER_POWER_UP_STATE;
 	set_P_flags(0x24);
@@ -42,7 +43,8 @@ CPU::CPU(Cartridge *cart)
 	clock_cycle = 0;
 	f.open("my_log.txt", ofstream::out);
 	linenum = 1;
-	memory = new CPU_Memory(cart);
+	console = con;
+	memory = new CPU_Memory(cart, console);
 }
 
 // std::vector<uint8_t> CPU::memory(MEM_SIZE);
@@ -1006,7 +1008,7 @@ void CPU::increment_on_page_crossing()
 
 void CPU::handle_interrupts()
 {
-	// RESET
+	// check for RESET here
 
 	// Execute NMI when NMI is enabled by PPU
 	if ((memory->read(PPU_CRTL_ADDRESS) & BYTE_SIGN_BIT_SET_MASK)) {
@@ -1023,8 +1025,7 @@ void CPU::nmi()
 	push_address(PC);
 	push(P & ALL_P_FLAGS_SET_B_FLAG_UNSET);
 	sei();
-	PC = (memory->read(NMI_VECTOR + 1) << BYTE_LENGTH);
-	PC |= memory->read(NMI_VECTOR);
+	PC = memory->read_address(NMI_VECTOR);
 	clock_cycle += INTERRUPT_LATENCY;
 	// if ((memory->read(0x2000) & 0x80)) {
 	// }
@@ -1043,8 +1044,7 @@ void CPU::irq()
 	push_address(PC);
 	php();
 	sei();
-	PC = (memory->read(IRQ_VECTOR + 1) << BYTE_LENGTH);
-	PC |= memory->read(IRQ_VECTOR);
+	PC = memory->read_address(IRQ_VECTOR);
 	clock_cycle += 7;
 	// if (!I_flag) {
 	// }

@@ -16,20 +16,22 @@
 #define PPU_MIRROR_INTERVAL 8
 #define PPU_REGISTER_MASK 0x7
 #define MOST_SIGNIFICANT_BIT 0x8000
-#define MEM_SIZE 0x8000
+#define MEMORY_SIZE 0x8000
 #define BYTE_LENGTH 8
 
 
-CPU_Memory::CPU_Memory() : Memory()
+CPU_Memory::CPU_Memory(Console *con) : Memory()
 {
-	memory.resize(MEM_SIZE);
+	console = con;
+	memory.resize(MEMORY_SIZE);
 	prg_rom = new NROM_Mapper();
 }
 
-CPU_Memory::CPU_Memory(Cartridge *cart) : Memory()
+CPU_Memory::CPU_Memory(Cartridge *cart, Console *con) : Memory()
 {
-	memory.resize(MEM_SIZE);
+	memory.resize(MEMORY_SIZE);
 	prg_rom = new NROM_Mapper(cart);
+	console = con;
 }
 
 	CPU_Memory::~CPU_Memory()
@@ -37,9 +39,9 @@ CPU_Memory::CPU_Memory(Cartridge *cart) : Memory()
 	delete prg_rom;
 }
 
-inline uint8_t CPU_Memory::read(uint16_t address)
+uint8_t CPU_Memory::read(uint16_t address)
 {
-	if (address < MEM_SIZE) {
+	if (address < MEMORY_SIZE) {
 		return memory.at(address);
 	} else {
 		return prg_rom->read(address);
@@ -49,7 +51,7 @@ inline uint8_t CPU_Memory::read(uint16_t address)
 uint16_t CPU_Memory::read_address(uint16_t address)
 {
 	uint16_t ret = 0;
-	if (address < MEM_SIZE) {
+	if (address < MEMORY_SIZE) {
 		ret = memory.at(address + 1) << BYTE_LENGTH;
 		ret |= memory.at(address);
 	} else {
@@ -59,15 +61,51 @@ uint16_t CPU_Memory::read_address(uint16_t address)
 	return ret;
 }
 
-inline void CPU_Memory::write(uint16_t address, uint8_t val)
+void CPU_Memory::write(uint16_t address, uint8_t val)
 {
-	if (address > MEM_SIZE) {
+	if (address > MEMORY_SIZE) {
 		prg_rom->write(address, val);
 	} else if (address >= 0 && address <= RAM_END_ADDRESS) {
 		ram_write_mirror(address, val);
 	} else if (address >= PPU_START_ADDRESS && address <= PPU_END_ADDRESS) {
 		ppu_write_mirror(address, val);
-	} else {
+		// Set values in PPU
+				// PPU *p = console->get_ppu();
+				// p->set_ppu_ctrl(val);
+		switch(address & PPU_REGISTER_MASK) {
+			case 0x00:
+				console->get_ppu()->set_ppu_ctrl(val);
+				break;
+			case 0x01:
+				console->get_ppu()->set_ppu_mask(val);
+				break;
+			case 0x02:
+				console->get_ppu()->set_ppu_status(val);
+				break;
+			case 0x03:
+				console->get_ppu()->set_oam_addr(val);
+				break;
+			case 0x04:
+				console->get_ppu()->set_oam_data(val);
+				break;
+			case 0x05:
+				console->get_ppu()->set_ppu_scroll(val);
+				break;
+			case 0x06:
+				console->get_ppu()->set_ppu_addr(val);
+				break;
+			case 0x07:
+				console->get_ppu()->set_ppu_data(val);
+				break;
+			default:
+				std::cerr << "Invalid PPU register address given <" <<
+					std::hex << (int)address << ">" << std::endl;
+		}
+	} 
+	else if (address == 0x4014) {
+		console->get_ppu()->set_oam_dma(val);
+	}
+	else {
 		memory.at(address) = val;
 	}
 }

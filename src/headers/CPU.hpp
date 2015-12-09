@@ -13,6 +13,7 @@
 #include "CPU_memory.hpp"
 #include "NROM_Mapper.hpp"
 #include "Cartridge.hpp"
+#include "Console.hpp"
 
 #define MEM_SIZE 65536
 #define ZERO_PAGE_WRAPAROUND 0xFF
@@ -41,6 +42,8 @@
 
 using namespace std;
 
+class Console;
+
 class CPU
 {
 public:
@@ -61,8 +64,8 @@ public:
 			ZERO_PAGE_Y
 		};
 
-	CPU();
-    CPU(Cartridge *);
+	CPU(Console *);
+    CPU(Cartridge *, Console *);
 
 	uint8_t read_memory(uint16_t); // Should be private and inline
 	void write_memory(uint16_t, uint8_t); // Should be private and inline
@@ -224,6 +227,7 @@ private:
 
 	int clock_cycle;
     Memory *memory;
+    Console *console;
 
 	// Length of an instruction in bytes
 	static const unsigned char instruction_length[];

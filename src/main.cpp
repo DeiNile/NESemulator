@@ -3,6 +3,7 @@
 #include "headers/Cartridge.hpp"
 #include "headers/CPU.hpp"
 #include "headers/NROM_Mapper.hpp"
+#include "headers/Console.hpp"
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
@@ -12,7 +13,7 @@
 
 using namespace std;
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 	if (argc != NUM_ARGS) {
 		cerr << "Invalid number of arguments. Please include a ROM file." 
@@ -20,10 +21,14 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	Cartridge cart(argv[1]);
-	CPU cpu(&cart);
-	cpu.set_PC(0xC000);
-	for (;;) {
-		cpu.fetch_and_execute();
-	}
+	Console console(&cart);
+	console.get_cpu()->set_PC(0xC000);
+	console.power_on();
+
+	// CPU cpu(&cart);
+	// cpu.set_PC(0xC000);
+	// for (;;) {
+	// 	cpu.fetch_and_execute();
+	// }
 }
 

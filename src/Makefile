@@ -1,6 +1,8 @@
 MAIN = main.o
-OBJS = Cartridge.o CPU.o execute.o Cartridge_header.o NROM_Mapper.o CPU_memory.o Memory_Mapper.o
-TEST_OBJS = Cartridge_header_test.o Cartridge_test.o CPU_test.o NROM_Mapper_test.o
+OBJS = Cartridge.o CPU.o execute.o Cartridge_header.o NROM_Mapper.o \
+	CPU_memory.o Memory_Mapper.o PPU.o Console.o
+TEST_OBJS = Cartridge_header_test.o Cartridge_test.o CPU_test.o \
+	NROM_Mapper_test.o PPU_test.o
 BOOST = -l boost_unit_test_framework
 SRC = Cartridge.cpp CPU.cpp
 CC = g++
@@ -12,7 +14,7 @@ LFLAGS = -Wall $(DEBUG)
 all:	$(OBJS) $(MAIN)
 	$(CC) $(LFLAGS) $(OBJS) $(MAIN) -o nes
 
-main.o:	CPU.o Cartridge.o main.cpp
+main.o:	Console.o main.cpp
 	$(CC) $(CFLAGS) main.cpp
 
 CPU_memory.o: CPU_memory.cpp
@@ -30,15 +32,17 @@ Cartridge.o:	Cartridge_header.o Cartridge.cpp
 Cartridge_header.o:	Cartridge_header.cpp
 	$(CC) $(CFLAGS) Cartridge_header.cpp
 
-egg.o:	headers/NROM_Mapper.hpp
-	$(CC) $(CFLAGS) headers/NROM_Mapper.hpp
-
 Memory_Mapper.o:	Memory_Mapper.cpp
 	$(CC) $(CFLAGS) Memory_Mapper.cpp
 
 NROM_Mapper.o:	Cartridge.o Cartridge_header.o NROM_Mapper.cpp
 	$(CC) $(CFLAGS) NROM_Mapper.cpp
-#$(MATH)
+
+PPU.o:	PPU.cpp
+	$(CC) $(CFLAGS) PPU.cpp
+
+Console.o:	Cartridge.o CPU.o PPU.o Console.cpp
+	$(CC) $(CFLAGS) Console.cpp
 
 #
 # THERE IS NO NEED TO SPECIFY OBJECT FILE WHEN COMPILING - LNKER WILL FIGURE IT OUT FOR ITSELF
@@ -56,6 +60,9 @@ Cartridge_test.o:	Cartridge.o test/Cartridge_test.cpp
 
 NROM_Mapper_test.o:	NROM_Mapper.o Cartridge.o test/Cartridge_test.cpp
 	$(CC) $(CFLAGS) test/NROM_Mapper_test.cpp
+
+PPU_test.o:	PPU.o test/PPU_test.cpp
+	$(CC) $(CFLAGS) test/PPU_test.cpp
 
 all_tests:	$(OBJS) $(TEST_OBJS)
 	$(CC) $(LFLAGS) $(BOOST) $(OBJS) $(TEST_OBJS) -o unit_test

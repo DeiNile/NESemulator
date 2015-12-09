@@ -24,8 +24,12 @@ protected:
 	Cartridge *cartridge;
 
     virtual void load_prg(const std::vector<uint8_t> &) = 0;
-    virtual int calc_bank(uint16_t) = 0;
-    virtual int calc_address(uint16_t) = 0;
+    virtual int calc_prg_bank(uint16_t) = 0;
+    virtual int calc_prg_address(uint16_t) = 0;
+
+    virtual void load_chr(const std::vector<uint8_t> &) = 0;
+    virtual int calc_chr_bank(uint16_t) = 0;
+    virtual int calc_chr_address(uint16_t) = 0;
 
 private:
 };
