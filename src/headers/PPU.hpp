@@ -40,6 +40,16 @@ public:
 	void set_ppu_data(uint8_t);
 	void set_oam_dma(uint8_t);
 
+	// Updates each register in its corresponding address in CPU memory
+	void update_ppu_ctrl();
+	void update_ppu_mask();
+	void update_ppu_status();
+	void update_oam_addr();
+	void update_oam_data();
+	void update_ppu_scroll();
+	void update_ppu_addr();
+	void update_ppu_data();
+	void update_oam_dma();
 
 	void print_state();
 protected:
@@ -61,16 +71,6 @@ private:
 	// Memory *memory;
 	Console *console;	
 
-	// Updates each register in its corresponding address in CPU memory
-	void update_ppu_ctrl();
-	void update_ppu_mask();
-	void update_ppu_status();
-	void update_oam_addr();
-	void update_oam_data();
-	void update_ppu_scroll();
-	void update_ppu_addr();
-	void update_ppu_data();
-	void update_oam_dma();
 
 
 };

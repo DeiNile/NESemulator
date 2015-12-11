@@ -93,4 +93,67 @@ BOOST_AUTO_TEST_CASE(write_to_oam_dma_from_cpu_test)
 	BOOST_CHECK(ppu->get_oam_dma() == val);
 }
 
+BOOST_AUTO_TEST_CASE(update_ppu_ctrl_in_cpu_memory_test)
+{
+	ppu->set_ppu_ctrl(val);
+	ppu->update_ppu_ctrl();
+	BOOST_CHECK(cpu->read_memory(0x2000) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_ppu_mask_in_cpu_memory_test)
+{
+	ppu->set_ppu_mask(val);
+	ppu->update_ppu_mask();
+	BOOST_CHECK(cpu->read_memory(0x2001) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_ppu_status_in_cpu_memory_test)
+{
+	ppu->set_ppu_status(val);
+	ppu->update_ppu_status();
+	BOOST_CHECK(cpu->read_memory(0x2002) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_oam_addr_in_cpu_memory_test)
+{
+	ppu->set_oam_addr(val);
+	ppu->update_oam_addr();
+	BOOST_CHECK(cpu->read_memory(0x2003) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_oam_data_in_cpu_memory_test)
+{
+	ppu->set_oam_data(val);
+	ppu->update_oam_data();
+	BOOST_CHECK(cpu->read_memory(0x2004) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_ppu_scroll_in_cpu_memory_test)
+{
+	ppu->set_ppu_scroll(val);
+	ppu->update_ppu_scroll();
+	BOOST_CHECK(cpu->read_memory(0x2005) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_ppu_addr_in_cpu_memory_test)
+{
+	ppu->set_ppu_addr(val);
+	ppu->update_ppu_addr();
+	BOOST_CHECK(cpu->read_memory(0x2006) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_ppu_data_in_cpu_memory_test)
+{
+	ppu->set_ppu_data(val);
+	ppu->update_ppu_data();
+	BOOST_CHECK(cpu->read_memory(0x2007) == val);
+}
+
+BOOST_AUTO_TEST_CASE(update_oam_dma_in_cpu_memory_test)
+{
+	ppu->set_oam_dma(val);
+	ppu->update_oam_dma();
+	BOOST_CHECK(cpu->read_memory(0x4014) == val);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

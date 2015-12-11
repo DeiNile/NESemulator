@@ -70,8 +70,6 @@ void CPU_Memory::write(uint16_t address, uint8_t val)
 	} else if (address >= PPU_START_ADDRESS && address <= PPU_END_ADDRESS) {
 		ppu_write_mirror(address, val);
 		// Set values in PPU
-				// PPU *p = console->get_ppu();
-				// p->set_ppu_ctrl(val);
 		switch(address & PPU_REGISTER_MASK) {
 			case 0x00:
 				console->get_ppu()->set_ppu_ctrl(val);
@@ -103,6 +101,7 @@ void CPU_Memory::write(uint16_t address, uint8_t val)
 		}
 	} 
 	else if (address == 0x4014) {
+		memory.at(address) = val;
 		console->get_ppu()->set_oam_dma(val);
 	}
 	else {
