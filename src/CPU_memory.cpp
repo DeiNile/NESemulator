@@ -19,6 +19,16 @@
 #define MEMORY_SIZE 0x8000
 #define BYTE_LENGTH 8
 
+#define PPU_CTRL_MASK 0x00
+#define PPU_MASK_MASK 0x01
+#define PPU_STATUS_MASK 0x02
+#define OAM_ADDR_MASK 0x03
+#define OAM_DATA_MASK 0x04
+#define PPU_SCROLL_MASK 0x05
+#define PPU_ADDR_MASK 0x06
+#define PPU_DATA_MASK 0x07
+#define OAM_DMA_ADDR 0x4014
+
 
 CPU_Memory::CPU_Memory(Console *con) : Memory()
 {
@@ -71,28 +81,28 @@ void CPU_Memory::write(uint16_t address, uint8_t val)
 		ppu_write_mirror(address, val);
 		// Set values in PPU
 		switch(address & PPU_REGISTER_MASK) {
-			case 0x00:
+			case PPU_CTRL_MASK:
 				console->get_ppu()->set_ppu_ctrl(val);
 				break;
-			case 0x01:
+			case PPU_MASK_MASK:
 				console->get_ppu()->set_ppu_mask(val);
 				break;
-			case 0x02:
+			case PPU_STATUS_MASK:
 				console->get_ppu()->set_ppu_status(val);
 				break;
-			case 0x03:
+			case OAM_ADDR_MASK:
 				console->get_ppu()->set_oam_addr(val);
 				break;
-			case 0x04:
+			case OAM_DATA_MASK:
 				console->get_ppu()->set_oam_data(val);
 				break;
-			case 0x05:
+			case PPU_SCROLL_MASK:
 				console->get_ppu()->set_ppu_scroll(val);
 				break;
-			case 0x06:
+			case PPU_ADDR_MASK:
 				console->get_ppu()->set_ppu_addr(val);
 				break;
-			case 0x07:
+			case PPU_DATA_MASK:
 				console->get_ppu()->set_ppu_data(val);
 				break;
 			default:
@@ -100,7 +110,7 @@ void CPU_Memory::write(uint16_t address, uint8_t val)
 					std::hex << (int)address << ">" << std::endl;
 		}
 	} 
-	else if (address == 0x4014) {
+	else if (address == OAM_DMA_ADDR) {
 		memory.at(address) = val;
 		console->get_ppu()->set_oam_dma(val);
 	}

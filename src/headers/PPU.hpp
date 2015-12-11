@@ -71,7 +71,10 @@ private:
 	// Memory *memory;
 	Console *console;	
 
-
+	// void render_frame();
+	// void render_scanline();
+	// void render_pixel();
+	void init_gui();
 
 };
 

@@ -1,10 +1,23 @@
 #include "headers/PPU.hpp"
-// #include <iostream>
 #include <boost/format.hpp>
+
+#include <SDL.h>
+#include <stdio.h>
+
+#define PPU_CTRL_ADDR 0x2000
+#define PPU_MASK_ADDR 0x2001
+#define PPU_STATUS_ADDR 0x2002
+#define OAM_ADDR_ADDR 0x2003
+#define OAM_DATA_ADDR 0x2004
+#define PPU_SCROLL_ADDR 0x2005
+#define PPU_ADDR_ADDR 0x2006
+#define PPU_DATA_ADDR 0x2007
+#define OAM_DMA_ADDR 0x4014
 
 PPU::PPU(Console *con)
 {
 	console = con;
+	init_gui();
 }
 
 // PPU::PPU()
@@ -120,45 +133,74 @@ void PPU::set_oam_dma(uint8_t val)
 
 void PPU::update_ppu_ctrl()
 {
-	console->get_cpu()->write_memory(0x2000, PPU_CTRL);
+	console->get_cpu()->write_memory(PPU_CTRL_ADDR, PPU_CTRL);
 }
 
 void PPU::update_ppu_mask()
 {
-	console->get_cpu()->write_memory(0x2001, PPU_MASK);
+	console->get_cpu()->write_memory(PPU_MASK_ADDR, PPU_MASK);
 }
 
 void PPU::update_ppu_status()
 {
-	console->get_cpu()->write_memory(0x2002, PPU_STATUS);
+	console->get_cpu()->write_memory(PPU_STATUS_ADDR, PPU_STATUS);
 }
 
 void PPU::update_oam_addr()
 {
-	console->get_cpu()->write_memory(0x2003, OAM_ADDR);
+	console->get_cpu()->write_memory(OAM_ADDR_ADDR, OAM_ADDR);
 }
 
 void PPU::update_oam_data()
 {
-	console->get_cpu()->write_memory(0x2004, OAM_DATA);
+	console->get_cpu()->write_memory(OAM_DATA_ADDR, OAM_DATA);
 }
 
 void PPU::update_ppu_scroll()
 {
-	console->get_cpu()->write_memory(0x2005, PPU_SCROLL);
+	console->get_cpu()->write_memory(PPU_SCROLL_ADDR, PPU_SCROLL);
 }
 
 void PPU::update_ppu_addr()
 {
-	console->get_cpu()->write_memory(0x2006, PPU_ADDR);
+	console->get_cpu()->write_memory(PPU_ADDR_ADDR, PPU_ADDR);
 }
 
 void PPU::update_ppu_data()
 {
-	console->get_cpu()->write_memory(0x2007, PPU_DATA);
+	console->get_cpu()->write_memory(PPU_DATA_ADDR, PPU_DATA);
 }
 
 void PPU::update_oam_dma()
 {
-	console->get_cpu()->write_memory(0x4014, OAM_DMA);
+	console->get_cpu()->write_memory(OAM_DMA_ADDR, OAM_DMA);
+}
+
+void PPU::init_gui()
+{
+	SDL_Window *window = NULL;
+	SDL_Surface *surface = NULL;
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		std::cerr << "SDl could not initialize. Error: " << 
+			SDL_GetError() << std::endl;
+	} else {
+		window = SDL_CreateWindow(
+			"NES gui",
+			SDL_WINDOWPOS_UNDEFINED,
+			SDL_WINDOWPOS_UNDEFINED,
+			640, 
+			480, 
+			SDL_WINDOW_SHOWN);
+		if (window == NULL) {
+			std::cerr << "SDL window could not be created. Error: " <<
+			 SDL_GetError() << std::endl;
+		} else {
+			surface = SDL_GetWindowSurface(window);
+			SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
+			SDL_UpdateWindowSurface(window);
+			SDL_Delay(3000);
+		}
+	}
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 }

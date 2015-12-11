@@ -4,6 +4,8 @@ OBJS = Cartridge.o CPU.o execute.o Cartridge_header.o NROM_Mapper.o \
 TEST_OBJS = Cartridge_header_test.o Cartridge_test.o CPU_test.o \
 	NROM_Mapper_test.o PPU_test.o
 BOOST = -l boost_unit_test_framework
+SDL_CLFAGS = `pkg-config --cflags sdl2`
+SDL_LIBS = `pkg-config --libs sdl2`
 SRC = Cartridge.cpp CPU.cpp
 CC = g++
 DEBUG = -g
@@ -12,10 +14,10 @@ CFLAGS = -Wall -c $(DEBUG)
 LFLAGS = -Wall $(DEBUG)
 
 all:	$(OBJS) $(MAIN)
-	$(CC) $(LFLAGS) $(OBJS) $(MAIN) -o nes
+	$(CC) $(LFLAGS) $(OBJS) $(MAIN) $(SDL_LIBS) $(SDL_CLFAGS) -o nes 
 
 main.o:	Console.o main.cpp
-	$(CC) $(CFLAGS) main.cpp
+	$(CC) $(CFLAGS) main.cpp 
 
 CPU_memory.o: CPU_memory.cpp
 	$(CC) $(CFLAGS) CPU_memory.cpp
@@ -39,7 +41,7 @@ NROM_Mapper.o:	Cartridge.o Cartridge_header.o NROM_Mapper.cpp
 	$(CC) $(CFLAGS) NROM_Mapper.cpp
 
 PPU.o:	PPU.cpp
-	$(CC) $(CFLAGS) PPU.cpp
+	$(CC) $(CFLAGS) $(SDL_CLFAGS) PPU.cpp
 
 Console.o:	Cartridge.o CPU.o PPU.o Console.cpp
 	$(CC) $(CFLAGS) Console.cpp
