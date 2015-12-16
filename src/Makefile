@@ -14,7 +14,7 @@ CFLAGS = -Wall -c $(DEBUG)
 LFLAGS = -Wall $(DEBUG)
 
 all:	$(OBJS) $(MAIN)
-	$(CC) $(LFLAGS) $(OBJS) $(MAIN) $(SDL_LIBS) $(SDL_CLFAGS) -o nes 
+	$(CC) $(LFLAGS) $(OBJS) $(MAIN) $(SDL_LIBS) -o nes 
 
 main.o:	Console.o main.cpp
 	$(CC) $(CFLAGS) main.cpp 

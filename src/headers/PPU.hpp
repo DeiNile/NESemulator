@@ -6,6 +6,7 @@
 #include "Console.hpp"
 
 #include <stdint.h>
+#include <vector>
 
 // class CPU;
 class Console;
@@ -52,6 +53,7 @@ public:
 	void update_oam_dma();
 
 	void print_state();
+	void execute();
 protected:
 
 private:
@@ -66,14 +68,52 @@ private:
 	uint8_t PPU_DATA;
 	uint8_t OAM_DMA;
 
-	// int cycles;
-	// int scanlines;
-	// Memory *memory;
-	Console *console;	
+	uint16_t address;
+	uint16_t curr_tile;
+	uint16_t next_tile;
+	uint8_t curr_palette_attribute;
+	uint8_t next_palette_attribute;
 
-	// void render_frame();
-	// void render_scanline();
-	// void render_pixel();
+	int cycles;
+	int scanline;
+	// Memory *memory;
+	// PPU_Memory *memory;
+	std::vector<uint8_t> memory;
+	Console *console;
+
+	uint16_t get_base_nametable_address();
+	uint8_t get_vram_increment();
+	uint16_t get_base_sprite_pattern_address();
+	uint16_t get_base_tile_pattern_address();
+	uint8_t get_sprite_size();
+	bool is_master();
+	bool is_nmi();
+
+	bool is_grayscale();
+	bool background_is_shown_to_left();
+	bool sprites_are_shown_to_left();
+	bool is_background_shown();
+	bool are_sprites_shown();
+	bool red_is_emphasized();
+	bool green_is_emphasized();
+	bool blue_is_emphasized();
+
+	void set_vblank();
+	void clear_vblank();
+	void set_sprite_0_hit();
+	void clear_sprite_0_hit();
+	void set_sprite_overflow();
+	void clear_sprite_overflow();
+	void set_least_significant_bits(uint8_t);
+
+	uint8_t get_nametable_entry();
+	uint8_t get_attribute_entry();
+	uint8_t get_low_tile_entry(uint8_t);
+	uint8_t get_high_tile_entry(uint8_t);
+
+
+
+	void render_pixel();
 	void init_gui();
 
 };
