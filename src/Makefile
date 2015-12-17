@@ -67,7 +67,7 @@ PPU_test.o:	PPU.o test/PPU_test.cpp
 	$(CC) $(CFLAGS) test/PPU_test.cpp
 
 all_tests:	$(OBJS) $(TEST_OBJS)
-	$(CC) $(LFLAGS) $(BOOST) $(OBJS) $(TEST_OBJS) -o unit_test
+	$(CC) $(LFLAGS) $(BOOST) $(OBJS) $(TEST_OBJS) $(SDL_LIBS) -o unit_test
 	./unit_test --log_level=error
 
 clean:

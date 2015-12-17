@@ -17,7 +17,7 @@
 #define WIDTH 256
 #define HEIGHT 240
 
-#define MEMORY_SIZE 8192
+#define MEMORY_SIZE 0x4000
 #define NAMETABLE_SIZE 960
 #define TILE_SIZE 64
 
@@ -55,19 +55,19 @@
 #define GREEN_EMPHASIS_MASK 0x40
 #define BLUE_EMPHASIS_MASK 0x80
 
+#define VRAM_ADDRESS_MASK 0x7FFF
+#define BYTE_WIDTH 8
+
 PPU::PPU(Console *con)
 {
 	cycles = 0;
 	scanline = 0;
 	console = con;
+	write_toggle = false;
+
 	memory.resize(MEMORY_SIZE);
-	init_gui();
+	// init_gui();
 }
-
-// PPU::PPU()
-// {
-
-// };
 
 PPU::~PPU()
 {
@@ -95,6 +95,7 @@ uint8_t PPU::get_ppu_status()
 {
 	uint8_t status = PPU_STATUS;
 	clear_vblank();
+	write_toggle = false;
 	return status;
 }
 
@@ -120,7 +121,16 @@ uint8_t PPU::get_ppu_addr()
 
 uint8_t PPU::get_ppu_data()
 {
-	return PPU_DATA;
+	// Save temporary return value
+	uint8_t ret = PPU_DATA;
+	// Set the next return value
+	PPU_DATA = data_buffer;
+	// Store the current read
+	data_buffer = memory.at(current_address);
+	current_address += get_vram_increment();
+	PPU_ADDR += get_vram_increment();
+	update_ppu_data();
+	return ret;
 }
 
 uint8_t PPU::get_oam_dma()
@@ -128,9 +138,21 @@ uint8_t PPU::get_oam_dma()
 	return OAM_DMA;
 }
 
+uint16_t PPU::get_address()
+{
+	return current_address;
+}
+
+uint16_t PPU::get_temp_address()
+{
+	return temp_address;
+}
+
 void PPU::set_ppu_ctrl(uint8_t val)
 {
 	PPU_CTRL = val;
+	temp_address &= 0x33FF; // set bits to 0
+	temp_address |= (val & 0x3) << 10; // set bits again
 }
 
 void PPU::set_ppu_mask(uint8_t val)
@@ -156,16 +178,39 @@ void PPU::set_oam_data(uint8_t val)
 void PPU::set_ppu_scroll(uint8_t val)
 {
 	PPU_SCROLL = val;
+	if (!write_toggle) {
+		x_scroll = (PPU_SCROLL & 0x7);
+		temp_address = ((val & 0xF8) >> 3);
+	} else {
+		uint16_t temp = (val & 0xF8) << 2;
+		temp |= (val & 0x7) << 12;
+		temp_address |= temp;
+	}
+	write_toggle = !write_toggle;
 }
 
 void PPU::set_ppu_addr(uint8_t val)
 {
 	PPU_ADDR = val;
+	if (!write_toggle) {
+		temp_address = ((uint16_t)val & 0x3F) << BYTE_WIDTH;
+	} else {
+		temp_address |= val;
+		current_address = temp_address;
+	}
+	// Flip write_toggle
+	write_toggle = !write_toggle;
+
 }
 
 void PPU::set_ppu_data(uint8_t val)
 {
 	PPU_DATA = val;
+	memory.at(current_address) = PPU_DATA;
+	// Should the lower byte of PPU_ADDR be updates too?
+	current_address += get_vram_increment();
+	PPU_ADDR += get_vram_increment();
+	// update_ppu_addr(); // BREAKS THE CURRENT ADDRESS, GETS RE-WRITTEN TO BY UPDATING
 }
 
 void PPU::set_oam_dma(uint8_t val)
@@ -173,6 +218,15 @@ void PPU::set_oam_dma(uint8_t val)
 	OAM_DMA = val;
 }
 
+uint8_t PPU::read_memory(uint16_t address)
+{
+	return memory.at(address);
+}
+
+uint8_t PPU::get_x_scroll()
+{
+	return x_scroll;
+}
 
 
 
@@ -489,22 +543,48 @@ void PPU::render_pixel()
  */
 void PPU::execute()
 {
-	if (is_background_shown() || are_sprites_shown()) {
-		if ((scanline >= 0 && scanline < 240) && 
-			(cycles >= 0 && cycles < 256)) {
-			render_pixel();
+	if (cycles == 0) {
+		// Do nothing?
+		update_counters();
+		return;
+	}
+	// Check if V blank should start
+	if (scanline == 241 && cycles == 1) {
+		// If NMI is enabled, set it
+		if (is_nmi()) {
+			set_vblank();
+			update_ppu_status();
 		}
-		else if (scanline == 240) {
-			// DO nothing?
-		} 
-		else if (scanline > 240) {
-			if (scanline == 241 && cycles == 2) {
-				set_vblank();
-			}
-			// change VRAM 
-		}
+	} else if (scanline == 261 && cycles == 1) { 
+		// V blank is now over
+		clear_vblank();
+		update_ppu_status();
 	}
 
+	// if (is_background_shown() || are_sprites_shown()) {
+	// 	if ((scanline >= 0 && scanline < 240) && 
+	// 		(cycles >= 0 && cycles < 256)) {
+	// 		render_pixel();
+	// 	}
+	// 	else if (scanline == 240) {
+	// 		// DO nothing?
+	// 	} 
+	// 	else if (scanline > 240) {
+	// 		if (scanline == 241 && cycles == 2) {
+	// 			set_vblank();
+	// 		}
+	// 		if (scanline == 251) {
+	// 			// Increment V
+	// 		}
+	// 		// change VRAM 
+	// 	}
+	// }
+
+	update_counters();
+}
+
+void PPU::update_counters()
+{
 	cycles++;
 	if (cycles == 341) {
 		cycles = 0;

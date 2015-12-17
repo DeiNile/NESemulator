@@ -29,6 +29,9 @@ public:
 	uint8_t get_ppu_data();
 	uint8_t get_oam_dma();
 
+	uint16_t get_address();
+	uint16_t get_temp_address();
+
 
 	// Public mutators for when the registers change in CPU memory
 	void set_ppu_ctrl(uint8_t);
@@ -52,6 +55,9 @@ public:
 	void update_ppu_data();
 	void update_oam_dma();
 
+	uint8_t read_memory(uint16_t);
+	uint8_t get_x_scroll();
+
 	void print_state();
 	void execute();
 protected:
@@ -67,17 +73,25 @@ private:
 	uint8_t PPU_ADDR;
 	uint8_t PPU_DATA;
 	uint8_t OAM_DMA;
+	uint8_t data_buffer;
 
-	uint16_t address;
-	uint16_t curr_tile;
-	uint16_t next_tile;
-	uint8_t curr_palette_attribute;
-	uint8_t next_palette_attribute;
+	// uint16_t curr_tile;
+	// uint16_t next_tile;
+	// uint8_t curr_palette_attribute;
+	// uint8_t next_palette_attribute;
 
 	int cycles;
 	int scanline;
-	// Memory *memory;
-	// PPU_Memory *memory;
+	int frame;
+
+	// Is used with PPU_DATA, used for nametable fetching, points to the 
+	// nametable entry that is currently being rendered (drawn to the screen?)
+	uint16_t current_address; // v - 15 bits
+	uint16_t temp_address; // t - 15 bits
+	uint8_t x_scroll; // fine x scroll - 3 bits
+	bool write_toggle; // tells if a write is the first or second, 0 = first
+
+
 	std::vector<uint8_t> memory;
 	Console *console;
 
@@ -112,8 +126,8 @@ private:
 	uint8_t get_high_tile_entry(uint8_t);
 
 
-
 	void render_pixel();
+	void update_counters();
 	void init_gui();
 
 };
