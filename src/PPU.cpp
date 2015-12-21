@@ -75,67 +75,43 @@ PPU::~PPU()
 
 void PPU::print_state()
 {
-	std::cerr << boost::format("PPU_Data:%02X PPU_MASK:%02X PPU_STATUS:%02X OAM_ADDR:%02X OAM_DATA:%02X PPU_SCROLL:%02X PPU_ADDR:%02X PPU_DATA:%02X OAM_DMA:%02X") % 
-		(int)PPU_DATA % (int)PPU_MASK % (int)PPU_STATUS % (int)OAM_ADDR % (int)OAM_DATA % (int)PPU_SCROLL % (int)PPU_ADDR % (int)PPU_DATA % (int)OAM_DMA;
+	// std::cerr << boost::format("PPU_Data:%02X PPU_MASK:%02X PPU_STATUS:%02X OAM_ADDR:%02X OAM_DATA:%02X PPU_SCROLL:%02X PPU_ADDR:%02X PPU_DATA:%02X OAM_DMA:%02X") % 
+	// 	(int)PPU_DATA % (int)PPU_MASK % (int)PPU_STATUS % (int)OAM_ADDR % (int)OAM_DATA % (int)PPU_SCROLL % (int)PPU_ADDR % (int)PPU_DATA % (int)OAM_DMA;
 }
 
 // Getters used for unit testing
 
-uint8_t PPU::get_ppu_ctrl()
-{
-	return PPU_CTRL;
-}
 
-uint8_t PPU::get_ppu_mask()
+uint8_t PPU::read_ppu_status()
 {
-	return PPU_MASK;
-}
-
-uint8_t PPU::get_ppu_status()
-{
-	uint8_t status = PPU_STATUS;
+	uint8_t ret = vblank_flag;
+	ret <<= 1;
+	ret |= sprite_hit_flag;
+	ret <<= 1;
+	ret |= sprite_overflow_flag;
+	ret <<= 5;
+	ret |= last_register;
 	clear_vblank();
 	write_toggle = false;
-	return status;
-}
-
-uint8_t PPU::get_oam_addr()
-{
-	return OAM_ADDR;
-}
-
-uint8_t PPU::get_oam_data()
-{
-	return OAM_DATA;
-}
-
-uint8_t PPU::get_ppu_scroll()
-{
-	return PPU_SCROLL;
-}
-
-uint8_t PPU::get_ppu_addr()
-{
-	return PPU_ADDR;
-}
-
-uint8_t PPU::get_ppu_data()
-{
-	// Save temporary return value
-	uint8_t ret = PPU_DATA;
-	// Set the next return value
-	PPU_DATA = data_buffer;
-	// Store the current read
-	data_buffer = memory.at(current_address);
-	current_address += get_vram_increment();
-	PPU_ADDR += get_vram_increment();
-	update_ppu_data();
 	return ret;
 }
 
-uint8_t PPU::get_oam_dma()
+uint8_t PPU::read_oam_data()
 {
-	return OAM_DMA;
+	return 0;
+}
+
+uint8_t PPU::read_ppu_data()
+{
+	// Save temporary return value
+	uint8_t ret = curr_data;
+	// Set the next return value
+	curr_data = next_data;
+	// Store the current read
+	next_data = memory.at(current_address);
+	current_address += get_vram_increment();
+	
+	return ret;
 }
 
 uint16_t PPU::get_address()
@@ -150,36 +126,34 @@ uint16_t PPU::get_temp_address()
 
 void PPU::set_ppu_ctrl(uint8_t val)
 {
-	PPU_CTRL = val;
+	// console->get_cpu()->write_memory(PPU_CTRL_ADDR, val);
+	// PPU_CTRL = val;
 	temp_address &= 0x33FF; // set bits to 0
 	temp_address |= (val & 0x3) << 10; // set bits again
 }
 
 void PPU::set_ppu_mask(uint8_t val)
 {
-	PPU_MASK = val;
-}
-
-void PPU::set_ppu_status(uint8_t val)
-{
-	PPU_STATUS = val;
+	// console->get_cpu()->write_memory(PPU_MASK_ADDR, val);
+	// PPU_MASK = val;
 }
 
 void PPU::set_oam_addr(uint8_t val)
 {
-	OAM_ADDR = val;
+	// OAM_ADDR = val;
 }
 
 void PPU::set_oam_data(uint8_t val)
 {
-	OAM_DATA = val;
+	// OAM_DATA = val;
 }
 
 void PPU::set_ppu_scroll(uint8_t val)
 {
-	PPU_SCROLL = val;
+	// PPU_SCROLL = val;
+	// console->get_cpu()->write_memory(PPU_SCROLL_ADDR, val);
 	if (!write_toggle) {
-		x_scroll = (PPU_SCROLL & 0x7);
+		x_scroll = (val & 0x7);
 		temp_address = ((val & 0xF8) >> 3);
 	} else {
 		uint16_t temp = (val & 0xF8) << 2;
@@ -191,7 +165,8 @@ void PPU::set_ppu_scroll(uint8_t val)
 
 void PPU::set_ppu_addr(uint8_t val)
 {
-	PPU_ADDR = val;
+	// console->get_cpu()->write_memory(PPU_ADDR_ADDR, val);
+	// PPU_ADDR = val;
 	if (!write_toggle) {
 		temp_address = ((uint16_t)val & 0x3F) << BYTE_WIDTH;
 	} else {
@@ -205,17 +180,18 @@ void PPU::set_ppu_addr(uint8_t val)
 
 void PPU::set_ppu_data(uint8_t val)
 {
-	PPU_DATA = val;
-	memory.at(current_address) = PPU_DATA;
+	// PPU_DATA = val;
+	memory.at(current_address) = val;
 	// Should the lower byte of PPU_ADDR be updates too?
 	current_address += get_vram_increment();
-	PPU_ADDR += get_vram_increment();
+	// console->get_cpu()->write_memory(PPU_ADDR_ADDR, current_address);
+	// PPU_ADDR += get_vram_increment();
 	// update_ppu_addr(); // BREAKS THE CURRENT ADDRESS, GETS RE-WRITTEN TO BY UPDATING
-}
+}	
 
 void PPU::set_oam_dma(uint8_t val)
 {
-	OAM_DMA = val;
+	// OAM_DMA = val;
 }
 
 uint8_t PPU::read_memory(uint16_t address)
@@ -229,64 +205,20 @@ uint8_t PPU::get_x_scroll()
 }
 
 
-
-void PPU::update_ppu_ctrl()
-{
-	console->get_cpu()->write_memory(PPU_CTRL_ADDR, PPU_CTRL);
-}
-
-void PPU::update_ppu_mask()
-{
-	console->get_cpu()->write_memory(PPU_MASK_ADDR, PPU_MASK);
-}
-
-void PPU::update_ppu_status()
-{
-	console->get_cpu()->write_memory(PPU_STATUS_ADDR, PPU_STATUS);
-}
-
-void PPU::update_oam_addr()
-{
-	console->get_cpu()->write_memory(OAM_ADDR_ADDR, OAM_ADDR);
-}
-
-void PPU::update_oam_data()
-{
-	console->get_cpu()->write_memory(OAM_DATA_ADDR, OAM_DATA);
-}
-
-void PPU::update_ppu_scroll()
-{
-	console->get_cpu()->write_memory(PPU_SCROLL_ADDR, PPU_SCROLL);
-}
-
-void PPU::update_ppu_addr()
-{
-	console->get_cpu()->write_memory(PPU_ADDR_ADDR, PPU_ADDR);
-}
-
-void PPU::update_ppu_data()
-{
-	console->get_cpu()->write_memory(PPU_DATA_ADDR, PPU_DATA);
-}
-
-void PPU::update_oam_dma()
-{
-	console->get_cpu()->write_memory(OAM_DMA_ADDR, OAM_DMA);
-}
-
 // Functions for all the various data in the PPU registers
 
 // CTRL register values
 
 uint16_t PPU::get_base_nametable_address()
 {
-	return NAMETABLE_START_ADDRESS | ((PPU_CTRL & NAMETABLE_BASE_MASK) << EGG);
+	return NAMETABLE_START_ADDRESS | ( 
+		(console->get_cpu()->read_memory(PPU_CTRL_ADDR) & NAMETABLE_BASE_MASK)
+		<< EGG);
 }
 
 uint8_t PPU::get_vram_increment()
 {
-	if (PPU_CTRL & VRAM_MASK) {
+	if (console->get_cpu()->read_memory(PPU_CTRL_ADDR) & VRAM_MASK) {
 		return VERTICAL_INCREMENT;
 	} else {
 		return HORIZONTAL_INCREMENT;
@@ -295,7 +227,7 @@ uint8_t PPU::get_vram_increment()
 
 uint16_t PPU::get_base_sprite_pattern_address()
 {
-	if (PPU_CTRL & SPRITE_START_ADDRESS_MASK) {
+	if (console->get_cpu()->read_memory(PPU_CTRL_ADDR) & SPRITE_START_ADDRESS_MASK) {
 		return SPRITE_START_ADDRESS_RIGHT;
 	} else {
 		return SPRITE_START_ADDRESS_LEFT;
@@ -304,7 +236,7 @@ uint16_t PPU::get_base_sprite_pattern_address()
 
 uint16_t PPU::get_base_tile_pattern_address()
 {
-	if (PPU_CTRL & TILE_START_ADDRESS_MASK) {
+	if (console->get_cpu()->read_memory(PPU_CTRL_ADDR) & TILE_START_ADDRESS_MASK) {
 		return TILE_START_ADDRESS_RIGHT;
 	} else {
 		return TILE_START_ADDRESS_LEFT;
@@ -313,7 +245,7 @@ uint16_t PPU::get_base_tile_pattern_address()
 
 uint8_t PPU::get_sprite_size()
 {
-	if (PPU_CTRL & SPRITE_SIZE_MASK) {
+	if (console->get_cpu()->read_memory(PPU_CTRL_ADDR) & SPRITE_SIZE_MASK) {
 		return SPRITE_SIZE_LARGE;
 	} else {
 		return SPRITE_SIZE_SMALL;
@@ -322,12 +254,12 @@ uint8_t PPU::get_sprite_size()
 
 bool PPU::is_master()
 {
-	return (PPU_CTRL & MASTER_MASK);
+	return (console->get_cpu()->read_memory(PPU_CTRL_ADDR) & MASTER_MASK);
 }
 
 bool PPU::is_nmi()
 {
-	return (PPU_CTRL & NMI_MASK);
+	return (console->get_cpu()->read_memory(PPU_CTRL_ADDR) & NMI_MASK);
 }
 
 // void PPU::set_nmi()
@@ -344,82 +276,87 @@ bool PPU::is_nmi()
 
 // MASK register values
 
-bool PPU::is_grayscale()
+bool PPU::is_colour()
 {
-	return (PPU_MASK & 0x1);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x1);
 }
 
 bool PPU::background_is_shown_to_left()
 {
-	return (PPU_MASK & 0x2);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x2);
 }
 
 bool PPU::sprites_are_shown_to_left()
 {
-	return (PPU_MASK & 0x4);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x4);
 }
 
 bool PPU::is_background_shown()
 {
-	return (PPU_MASK & 0x8);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x8);
 }
 
 bool PPU::are_sprites_shown()
 {
-	return (PPU_MASK & 0x10);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x10);
 }
 
 bool PPU::red_is_emphasized()
 {
-	return (PPU_MASK & 0x20);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x20);
 }
 
 bool PPU::green_is_emphasized()
 {
-	return (PPU_MASK & 0x40);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x40);
 }
 
 bool PPU::blue_is_emphasized()
 {
-	return (PPU_MASK & 0x80);
+	return (console->get_cpu()->read_memory(PPU_MASK_ADDR) & 0x80);
 }
 
 // STATUS register values
 
 void PPU::set_vblank()
 {
-	PPU_STATUS |= VBLANK_SET_MASK;
+	vblank_flag = true;
+	// PPU_STATUS |= VBLANK_SET_MASK;
 }
 
 void PPU::clear_vblank()
 {
-	PPU_STATUS &= VBLANK_CLEAR_MASK;
+	vblank_flag = false;
+	// PPU_STATUS &= VBLANK_CLEAR_MASK;
 }
 
 void PPU::set_sprite_0_hit()
 {
-	PPU_STATUS |= SPRITE_0_HIT_SET_MASK;
+	sprite_hit_flag = true;
+	// PPU_STATUS |= SPRITE_0_HIT_SET_MASK;
 }
 
 void PPU::clear_sprite_0_hit()
 {
-	PPU_STATUS &= SPRITE_0_HIT_CLEAR_MASK;
+	sprite_hit_flag = false;
+	// PPU_STATUS &= SPRITE_0_HIT_CLEAR_MASK;
 }
 
 void PPU::set_sprite_overflow()
 {
-	PPU_STATUS |= SPRITE_OVERFLOW_SET_MASK;
+	sprite_overflow_flag = true;
+	// PPU_STATUS |= SPRITE_OVERFLOW_SET_MASK;
 }
 
 void PPU::clear_sprite_overflow()
 {
-	PPU_STATUS &= SPRITE_OVERFLOW_CLEAR_MASK;
+	sprite_overflow_flag = false;
+	// PPU_STATUS &= SPRITE_OVERFLOW_CLEAR_MASK;
 }
 
 void PPU::set_least_significant_bits(uint8_t reg_val)
 {
-	reg_val &= FIVE_LEAST_SIGNIFICANT_BITS;
-	PPU_STATUS = (PPU_STATUS & THREE_MOST_SIGNIFICANT_BITS) | reg_val;
+	last_register = (reg_val & FIVE_LEAST_SIGNIFICANT_BITS);
 }
 
 
@@ -553,12 +490,11 @@ void PPU::execute()
 		// If NMI is enabled, set it
 		if (is_nmi()) {
 			set_vblank();
-			update_ppu_status();
 		}
 	} else if (scanline == 261 && cycles == 1) { 
 		// V blank is now over
 		clear_vblank();
-		update_ppu_status();
+		// update_ppu_status();
 	}
 
 	// if (is_background_shown() || are_sprites_shown()) {

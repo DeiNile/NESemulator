@@ -52,7 +52,17 @@ CPU_Memory::CPU_Memory(Cartridge *cart, Console *con) : Memory()
 uint8_t CPU_Memory::read(uint16_t address)
 {
 	if (address < MEMORY_SIZE) {
-		return memory.at(address);
+		// Check for reading of status, and data registers
+		if (address == 0x2007) {
+			// Sets the value in memory to give the CPU an up to date view
+			memory.at(0x2007) = console->get_ppu()->read_ppu_data();
+			return memory.at(0x2007);
+		} else if (address == 0x2002) {
+			memory.at(0x2002) = console->get_ppu()->read_ppu_status();
+			return memory.at(0x2002);
+		} else {
+			return memory.at(address);
+		}
 	} else {
 		return prg_rom->read(address);
 	}
@@ -86,9 +96,6 @@ void CPU_Memory::write(uint16_t address, uint8_t val)
 				break;
 			case PPU_MASK_MASK:
 				console->get_ppu()->set_ppu_mask(val);
-				break;
-			case PPU_STATUS_MASK:
-				console->get_ppu()->set_ppu_status(val);
 				break;
 			case OAM_ADDR_MASK:
 				console->get_ppu()->set_oam_addr(val);

@@ -39,130 +39,62 @@ struct PPU_register_fixture {
 
 BOOST_FIXTURE_TEST_SUITE(cpu_io_write_reflected_in_ppu_register_tests, PPU_fixture)
 
-BOOST_AUTO_TEST_CASE(write_to_ppu_ctrl_from_cpu_test)
+BOOST_AUTO_TEST_CASE(nmi_enabled_after_write_to_ctrl_test)
 {
-	cpu->write_memory(0x2000, val);
-	BOOST_CHECK(ppu->get_ppu_ctrl() == val);
+	cpu->write_memory(0x2000, 0xFF);
+	BOOST_CHECK(ppu->is_nmi());
 }
 
-BOOST_AUTO_TEST_CASE(write_to_ppu_mask_from_cpu_test)
+BOOST_AUTO_TEST_CASE(master_enabled_after_write_to_ctrl_test)
 {
-	cpu->write_memory(0x2001, val);
-	BOOST_CHECK(ppu->get_ppu_mask() == val);
+	cpu->write_memory(0x2000, 0xFF);
+	BOOST_CHECK(ppu->is_master());
 }
 
-BOOST_AUTO_TEST_CASE(write_to_ppu_status_from_cpu_test)
+BOOST_AUTO_TEST_CASE(sprite_size_128_after_write_to_ctrl_test)
 {
-	cpu->write_memory(0x2002, val);
-	BOOST_CHECK(ppu->get_ppu_status() == val);
+	cpu->write_memory(0x2000, 0xFF);
+	BOOST_CHECK(ppu->get_sprite_size());
 }
 
-BOOST_AUTO_TEST_CASE(write_to_oam_addr_from_cpu_test)
+BOOST_AUTO_TEST_CASE(background_address_is_right_after_write_to_ctrl_test)
 {
-	cpu->write_memory(0x2003, val);
-	BOOST_CHECK(ppu->get_oam_addr() == val);
+	cpu->write_memory(0x2000, 0xFF);
+	BOOST_CHECK(ppu->get_base_tile_pattern_address() == 0x1000);
 }
 
-BOOST_AUTO_TEST_CASE(write_to_oam_data_from_cpu_test)
+BOOST_AUTO_TEST_CASE(sprite_address_is_right_after_write_to_ctrl_test)
 {
-	cpu->write_memory(0x2004, val);
-	BOOST_CHECK(ppu->get_oam_data() == val);
+	cpu->write_memory(0x2000, 0xFF);
+	BOOST_CHECK(ppu->get_base_sprite_pattern_address() == 0x1000);
 }
 
-BOOST_AUTO_TEST_CASE(write_to_ppu_scroll_from_cpu_test)
+BOOST_AUTO_TEST_CASE(vram_increment_is_32_after_write_to_ctrl_test)
 {
-	cpu->write_memory(0x2005, val);
-	BOOST_CHECK(ppu->get_ppu_scroll() == val);
+	cpu->write_memory(0x2000, 0xFF);
+	BOOST_CHECK(ppu->get_vram_increment() == 32);
 }
 
-BOOST_AUTO_TEST_CASE(write_to_ppu_addr_from_cpu_test)
+BOOST_AUTO_TEST_CASE(base_nametable_is_0x2c00_after_write_to_ctrl_test)
 {
-	cpu->write_memory(0x2006, val);
-	BOOST_CHECK(ppu->get_ppu_addr() == val);
+	cpu->write_memory(0x2000, 0xFF);
+	BOOST_CHECK(ppu->get_base_nametable_address() == 0x2C00);
+
 }
 
-BOOST_AUTO_TEST_CASE(write_to_ppu_data_from_cpu_test)
-{
-	cpu->write_memory(0x2007, val);
-	BOOST_CHECK(ppu->get_ppu_data() == val);
-}
-
-BOOST_AUTO_TEST_CASE(write_to_oam_dma_from_cpu_test)
-{
-	cpu->write_memory(0x4014, val);
-	BOOST_CHECK(ppu->get_oam_dma() == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_ppu_ctrl_in_cpu_memory_test)
-{
-	ppu->set_ppu_ctrl(val);
-	ppu->update_ppu_ctrl();
-	BOOST_CHECK(cpu->read_memory(0x2000) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_ppu_mask_in_cpu_memory_test)
-{
-	ppu->set_ppu_mask(val);
-	ppu->update_ppu_mask();
-	BOOST_CHECK(cpu->read_memory(0x2001) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_ppu_status_in_cpu_memory_test)
-{
-	ppu->set_ppu_status(val);
-	ppu->update_ppu_status();
-	BOOST_CHECK(cpu->read_memory(0x2002) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_oam_addr_in_cpu_memory_test)
-{
-	ppu->set_oam_addr(val);
-	ppu->update_oam_addr();
-	BOOST_CHECK(cpu->read_memory(0x2003) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_oam_data_in_cpu_memory_test)
-{
-	ppu->set_oam_data(val);
-	ppu->update_oam_data();
-	BOOST_CHECK(cpu->read_memory(0x2004) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_ppu_scroll_in_cpu_memory_test)
-{
-	ppu->set_ppu_scroll(val);
-	ppu->update_ppu_scroll();
-	BOOST_CHECK(cpu->read_memory(0x2005) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_ppu_addr_in_cpu_memory_test)
-{
-	ppu->set_ppu_addr(val);
-	ppu->update_ppu_addr();
-	BOOST_CHECK(cpu->read_memory(0x2006) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_ppu_data_in_cpu_memory_test)
-{
-	ppu->set_ppu_data(val);
-	ppu->update_ppu_data();
-	BOOST_CHECK(cpu->read_memory(0x2007) == val);
-}
-
-BOOST_AUTO_TEST_CASE(update_oam_dma_in_cpu_memory_test)
-{
-	ppu->set_oam_dma(val);
-	ppu->update_oam_dma();
-	BOOST_CHECK(cpu->read_memory(0x4014) == val);
-}
 
 BOOST_AUTO_TEST_CASE(buffered_ppu_data_read_test)
 {
-	cpu->write_memory(0x2006, 0x20);
-	cpu->write_memory(0x2006, 0x00);
+	cpu->write_memory(0x2000, 0x0); // Ensure vram increment is 1
+	cpu->write_memory(0x2006, 0x20); // write high byte of address
+	cpu->write_memory(0x2006, 0x00); // write low byte of address
 	cpu->write_memory(0x2007, 0x11); // is written to 0x2000
 	cpu->write_memory(0x2007, 0xFF); // is written to 0x2001
-	BOOST_CHECK(cpu->read_memory(0x2007) == 0);
+	// Reset the address to point to 0x2000
+	cpu->write_memory(0x2006, 0x20); // write high byte of address
+	cpu->write_memory(0x2006, 0x00); // write low byte of address
+	BOOST_CHECK(cpu->read_memory(0x2007) == 0); // The first read just fills the temporary buffer
+	BOOST_CHECK(cpu->read_memory(0x2007) == 0); // The second read is genuine
 	BOOST_CHECK(cpu->read_memory(0x2007) == 0x11);
 	BOOST_CHECK(cpu->read_memory(0x2007) == 0xFF);
 }
@@ -228,6 +160,54 @@ BOOST_AUTO_TEST_CASE(changing_nametable_base_in_existing_address_test)
 	cpu->write_memory(0x2000, 0);
 	BOOST_CHECK(ppu->get_temp_address() == 0x33FF);
 
+}
+
+BOOST_AUTO_TEST_CASE(greyscale_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x1);
+	BOOST_CHECK(ppu->is_colour());
+}
+
+BOOST_AUTO_TEST_CASE(show_left_background_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x2);
+	BOOST_CHECK(ppu->background_is_shown_to_left());
+}
+
+BOOST_AUTO_TEST_CASE(show_left_sprite_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x4);
+	BOOST_CHECK(ppu->sprites_are_shown_to_left());
+}
+
+BOOST_AUTO_TEST_CASE(show_backgorund_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x8);
+	BOOST_CHECK(ppu->is_background_shown());
+}
+
+BOOST_AUTO_TEST_CASE(show_sprites_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x10);
+	BOOST_CHECK(ppu->are_sprites_shown());
+}
+
+BOOST_AUTO_TEST_CASE(red_is_emphasized_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x20);
+	BOOST_CHECK(ppu->red_is_emphasized());
+}
+
+BOOST_AUTO_TEST_CASE(green_is_emphasized_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x40);
+	BOOST_CHECK(ppu->green_is_emphasized());
+}
+
+BOOST_AUTO_TEST_CASE(blue_is_emphasized_after_write_test)
+{
+	cpu->write_memory(0x2001, 0x80);
+	BOOST_CHECK(ppu->blue_is_emphasized());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

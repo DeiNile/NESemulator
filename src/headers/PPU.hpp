@@ -19,16 +19,10 @@ public:
 	PPU(Console *);
 	~PPU();
 
-	uint8_t get_ppu_ctrl();
-	uint8_t get_ppu_mask();
-	uint8_t get_ppu_status();
-	uint8_t get_oam_addr();
-	uint8_t get_oam_data();
-	uint8_t get_ppu_scroll();
-	uint8_t get_ppu_addr();
-	uint8_t get_ppu_data();
-	uint8_t get_oam_dma();
-
+	uint8_t read_ppu_status();
+	uint8_t read_ppu_data();
+	uint8_t read_oam_data();
+	
 	uint16_t get_address();
 	uint16_t get_temp_address();
 
@@ -43,17 +37,23 @@ public:
 	void set_ppu_addr(uint8_t);
 	void set_ppu_data(uint8_t);
 	void set_oam_dma(uint8_t);
+	
+	uint16_t get_base_nametable_address();
+	uint8_t get_vram_increment();
+	uint16_t get_base_sprite_pattern_address();
+	uint16_t get_base_tile_pattern_address();
+	uint8_t get_sprite_size();
+	bool is_master();
+	bool is_nmi();
 
-	// Updates each register in its corresponding address in CPU memory
-	void update_ppu_ctrl();
-	void update_ppu_mask();
-	void update_ppu_status();
-	void update_oam_addr();
-	void update_oam_data();
-	void update_ppu_scroll();
-	void update_ppu_addr();
-	void update_ppu_data();
-	void update_oam_dma();
+	bool is_colour();
+	bool background_is_shown_to_left();
+	bool sprites_are_shown_to_left();
+	bool is_background_shown();
+	bool are_sprites_shown();
+	bool red_is_emphasized();
+	bool green_is_emphasized();
+	bool blue_is_emphasized();
 
 	uint8_t read_memory(uint16_t);
 	uint8_t get_x_scroll();
@@ -64,16 +64,22 @@ protected:
 
 private:
 	// Registers
-	uint8_t PPU_CTRL;
-	uint8_t PPU_MASK;
-	uint8_t PPU_STATUS;
-	uint8_t OAM_ADDR;
-	uint8_t OAM_DATA;
-	uint8_t PPU_SCROLL;
-	uint8_t PPU_ADDR;
-	uint8_t PPU_DATA;
-	uint8_t OAM_DMA;
-	uint8_t data_buffer;
+	// uint8_t PPU_CTRL;
+	// uint8_t PPU_MASK;
+	// uint8_t PPU_STATUS;
+	// uint8_t OAM_ADDR;
+	// uint8_t OAM_DATA;
+	// uint8_t PPU_SCROLL;
+	// uint8_t PPU_ADDR;
+	// uint8_t PPU_DATA;
+	// uint8_t OAM_DMA;
+	uint8_t curr_data;
+	uint8_t next_data;
+
+	bool vblank_flag;
+	bool sprite_hit_flag;
+	bool sprite_overflow_flag;
+	uint8_t last_register;
 
 	// uint16_t curr_tile;
 	// uint16_t next_tile;
@@ -95,22 +101,7 @@ private:
 	std::vector<uint8_t> memory;
 	Console *console;
 
-	uint16_t get_base_nametable_address();
-	uint8_t get_vram_increment();
-	uint16_t get_base_sprite_pattern_address();
-	uint16_t get_base_tile_pattern_address();
-	uint8_t get_sprite_size();
-	bool is_master();
-	bool is_nmi();
 
-	bool is_grayscale();
-	bool background_is_shown_to_left();
-	bool sprites_are_shown_to_left();
-	bool is_background_shown();
-	bool are_sprites_shown();
-	bool red_is_emphasized();
-	bool green_is_emphasized();
-	bool blue_is_emphasized();
 
 	void set_vblank();
 	void clear_vblank();
