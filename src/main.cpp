@@ -11,12 +11,14 @@
 #define NUM_ARGS 2
 #define ROM_INDEX 1
 
-using namespace std;
-
+/*
+ * The main function for this NES emulator.
+ * Needs a path to a NES game in order to run the game.
+ */
 int main(int argc, char *argv[])
 {
 	if (argc != NUM_ARGS) {
-		cerr << "Invalid number of arguments. Please include a ROM file." 
+		std::cerr << "Invalid number of arguments. Please include a ROM file." 
 			<< endl;
 		return 1;
 	}
