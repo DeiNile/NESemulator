@@ -7,6 +7,13 @@
  * Even when an 8-bit value is expected the function should work properly
  * by using the 16-bit address value. Typecasting ensures that the lower 8 bits
  * are passed the the function.
+ *
+ * Could be optimized (theoretically) by changing the order of the cases so that
+ * they are in the order how likely they are to be true. 
+ *
+ * @param opcode The opcode of the instruction
+ * @param address The address that is used by the opcode. Could be unused 
+ *	depending on the opcode.
  */
 void CPU::execute(uint8_t opcode, uint16_t address)
 {
