@@ -26,6 +26,11 @@ Console::~Console()
 	// delete cart;
 }
 
+/*
+ * Initializes the CPU and PPU with the provided cartridge.
+ *
+ * @param cartridge The cartridge that stores all the game data
+ */
 void Console::load_cartridge(Cartridge *cartridge)
 {
 	cart = cartridge;
@@ -33,6 +38,11 @@ void Console::load_cartridge(Cartridge *cartridge)
 	ppu = new PPU(this);
 }
 
+/*
+ * Starts executing the program code that is loaded into the cpu,
+ * thus essentially loading up the game and running it.
+ * If no cartridge is provided then the game cannot be ran.
+ */
 void Console::power_on()
 {
 	// struct sigaction;
@@ -69,11 +79,21 @@ void Console::reset()
 	// cpu->reset();
 }
 
+/*
+ * Retrives the CPU.
+ * This is needed so that the CPU and PPU can effectively communicate with
+ * each other.
+ */
 CPU *Console::get_cpu()
 { 
 	return cpu;
 }
 
+/*
+ * Retrives the PPU.
+ * This is needed so that the CPU and PPU can effectively communicate with
+ * each other.
+ */
 PPU *Console::get_ppu()
 {
 	return ppu;
