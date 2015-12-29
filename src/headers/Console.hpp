@@ -19,6 +19,7 @@ public:
 	void load_cartridge(Cartridge *);
 	void reset();
 	void power_on();
+	// void power_off(int);
 
 	CPU* get_cpu();
 	PPU *get_ppu();

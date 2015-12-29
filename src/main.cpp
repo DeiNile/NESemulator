@@ -24,11 +24,5 @@ int main(int argc, char *argv[])
 	Console console(&cart);
 	console.get_cpu()->set_PC(0xC000);
 	console.power_on();
-
-	// CPU cpu(&cart);
-	// cpu.set_PC(0xC000);
-	// for (;;) {
-	// 	cpu.fetch_and_execute();
-	// }
 }
 

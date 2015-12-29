@@ -63,16 +63,6 @@ public:
 protected:
 
 private:
-	// Registers
-	// uint8_t PPU_CTRL;
-	// uint8_t PPU_MASK;
-	// uint8_t PPU_STATUS;
-	// uint8_t OAM_ADDR;
-	// uint8_t OAM_DATA;
-	// uint8_t PPU_SCROLL;
-	// uint8_t PPU_ADDR;
-	// uint8_t PPU_DATA;
-	// uint8_t OAM_DMA;
 	uint8_t curr_data;
 	uint8_t next_data;
 
@@ -80,11 +70,6 @@ private:
 	bool sprite_hit_flag;
 	bool sprite_overflow_flag;
 	uint8_t last_register;
-
-	// uint16_t curr_tile;
-	// uint16_t next_tile;
-	// uint8_t curr_palette_attribute;
-	// uint8_t next_palette_attribute;
 
 	int cycles;
 	int scanline;
@@ -96,6 +81,17 @@ private:
 	uint16_t temp_address; // t - 15 bits
 	uint8_t x_scroll; // fine x scroll - 3 bits
 	bool write_toggle; // tells if a write is the first or second, 0 = first
+
+	uint8_t nametable_entry;
+	uint8_t attribute_entry;
+	uint8_t high_tile_entry;
+	uint8_t low_tile_entry;
+
+	// Temporary variables for rendering
+	uint16_t high_background_shift_register;
+	uint16_t low_background_shift_register;
+	uint8_t first_tile;
+	uint8_t second_tile;
 
 
 	std::vector<uint8_t> memory;
@@ -113,10 +109,11 @@ private:
 
 	uint8_t get_nametable_entry();
 	uint8_t get_attribute_entry();
-	uint8_t get_low_tile_entry(uint8_t);
-	uint8_t get_high_tile_entry(uint8_t);
+	uint8_t get_low_tile_entry();
+	uint8_t get_high_tile_entry();
 
-
+	void move_temps_to_shift_registers();
+	void get_rendering_variables();
 	void render_pixel();
 	void update_counters();
 	void init_gui();

@@ -362,6 +362,7 @@ void PPU::set_least_significant_bits(uint8_t reg_val)
 
 // ===========================================================
 
+
 void PPU::init_gui()
 {
 	SDL_Window *window = NULL;
@@ -397,55 +398,46 @@ void PPU::init_gui()
  */
 uint8_t PPU::get_nametable_entry()
 {
-	// Figure out which nametable to look in
-	uint16_t base = get_base_nametable_address();
-	// The address for the nametable entry
-	uint16_t offset = (scanline * 32) + cycles;
-	return memory.at(base + offset);
-}
-
-uint8_t PPU::get_attribute_entry()
-{
-	uint16_t base = get_base_nametable_address() + 960;
-	// ?????
-	return 0;
-}
-
-uint8_t PPU::get_low_tile_entry(uint8_t pattern_index)
-{
-	uint16_t pattern_base = get_base_tile_pattern_address();
-	return memory.at(pattern_base + (pattern_index * TILE_SIZE));
-}
-
-uint8_t PPU::get_high_tile_entry(uint8_t pattern_index)
-{
-	uint16_t pattern_base = get_base_tile_pattern_address();
-	return memory.at(pattern_base + (pattern_index * TILE_SIZE));
+	return memory.at(0x2000 | (current_address & 0xFFF));
 }
 
 /*
- * Takes two patterns and calculates the values to be used for the 
- * colour table.
- * Could be made more efficient by using a UINT16_T instead of a vector
+ * Calculates the attribute entry for the current tile. 
+ * The effective address width is 12 bits.
+ *
+ * Explanations of the calculations are as follows:
+ * NN 1111 YYY XXX
+ * || |||| ||| +++-- high 3 bits of coarse X (x/4)
+ * || |||| +++------ high 3 bits of coarse Y (y/4)
+ * || ++++---------- attribute offset (960 bytes)
+ * ++--------------- nametable select
  */
-// std::vector<uint8_t> PPU::combine_patterns(uint8_t low, uint8_t high)
-// {
-// 	std::vector<uint8_t> ret(8);
-// 	uint8_t pixel = 0;
-// 	for (int i = 7; i >= 0; i--) {
-// 		ret.at(i) = ((high & 0x1) << 1) | (low & 0x1);
-// 		low >>= 1;
-// 		high >>= 1;
-// 	}
-// 	return ret;
-// }
+uint8_t PPU::get_attribute_entry()
+{
+	return  0x23C0 | (current_address & 0x0C00) | ((current_address >> 4) & 0x38) | ((current_address >> 2) & 0x07);
+}
+
+uint8_t PPU::get_low_tile_entry()
+{
+	// The 12 low bits of the address designate the X/Y coordinates of the pixel
+	uint16_t tile_address = 0x2000 | (current_address & 0xFFF);
+	return memory.at(tile_address + 1);
+}
+
+uint8_t PPU::get_high_tile_entry()
+{
+	// The 12 low bits of the address designate the X/Y coordinates of the pixel
+	uint16_t tile_address = 0x2000 | (current_address & 0xFFF);
+	return memory.at(tile_address);
+}
 
 void PPU::render_pixel()
 {
-	uint8_t nametable_entry;
-	uint8_t attribute_entry;
-	uint8_t low;
-	uint8_t high;
+	
+}
+
+void PPU::get_rendering_variables()
+{
 	switch(cycles % 8) {
 		case 0:
 			// Very first cycle should do nothing
@@ -463,16 +455,17 @@ void PPU::render_pixel()
 			attribute_entry = get_attribute_entry();
 			break;
 		case 5:
-			low = get_low_tile_entry(nametable_entry);
+			low_tile_entry = get_low_tile_entry();
 			break;
 		case 7: 
-			high = get_high_tile_entry(nametable_entry);
-			// increment SOMETHING
+			high_tile_entry = get_high_tile_entry();
 			break;
-
 	}
-	// Combine into a rendered pixel
-	
+}
+
+void PPU::move_temps_to_shift_registers()
+{
+
 }
 
 /*
@@ -497,24 +490,29 @@ void PPU::execute()
 		// update_ppu_status();
 	}
 
-	// if (is_background_shown() || are_sprites_shown()) {
-	// 	if ((scanline >= 0 && scanline < 240) && 
-	// 		(cycles >= 0 && cycles < 256)) {
-	// 		render_pixel();
-	// 	}
-	// 	else if (scanline == 240) {
-	// 		// DO nothing?
-	// 	} 
-	// 	else if (scanline > 240) {
-	// 		if (scanline == 241 && cycles == 2) {
-	// 			set_vblank();
-	// 		}
-	// 		if (scanline == 251) {
-	// 			// Increment V
-	// 		}
-	// 		// change VRAM 
-	// 	}
-	// }
+	// Rendering is enabled
+	if (is_background_shown() || are_sprites_shown()) {
+		// Check if we are in a visible frame
+		if (scanline < 240 && (cycles >= 1 && cycles < 257)) {
+			// A pixel needs to be rendered
+		}
+		// Check if we have to retrieve any values for rendering
+		// either because we are rendering, or because of pre-fetchting
+		if (
+			(scanline == 261 || scanline < 240) && // Are we on a visible scanline
+			((cycles >= 1 && cycles < 257) || 	   // Are we on a visible pixel
+			(cycles <= 336 && cycles > 320)) ) {   // Are we on a pre-fetch cycle
+			get_rendering_variables();
+		}
+
+	}
+
+	// TODO Add stuff for sprite rendering
+
+	// The post-render lines are here - writes to VRAM can happen safely
+	if (scanline >= 240 && scanline < 261) {
+
+	}
 
 	update_counters();
 }

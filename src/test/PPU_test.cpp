@@ -82,7 +82,6 @@ BOOST_AUTO_TEST_CASE(base_nametable_is_0x2c00_after_write_to_ctrl_test)
 
 }
 
-
 BOOST_AUTO_TEST_CASE(buffered_ppu_data_read_test)
 {
 	cpu->write_memory(0x2000, 0x0); // Ensure vram increment is 1
