@@ -195,8 +195,8 @@ public:
 	void reset();
 	void irq();
 
-	static uint8_t rot_l(uint8_t);
-	static uint8_t rot_r(uint8_t);
+	uint8_t rot_l(uint8_t);
+	// static uint8_t rot_r(uint8_t);
 	void fetch_and_execute();
 	void load_prg_bank_lower(std::vector<uint8_t> &);
 	void load_prg_bank_upper(std::vector<uint8_t> &);

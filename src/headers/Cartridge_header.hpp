@@ -62,7 +62,10 @@ private:
 	// Flags 9
 	bool tv_system; // 0 NTSC, 1 PAL
 
-	void update_flags();
+	// void update_flags();
+	void update_flag_6();
+	void update_flag_7();
+	void assemble_mapper_number();
 };
 
 #endif

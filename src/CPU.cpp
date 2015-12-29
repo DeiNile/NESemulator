@@ -1309,10 +1309,10 @@ void CPU::print_state()
 // 	return (value << 7) | (value >> 1);
 // }
 
-// inline uint8_t CPU::rot_l(uint8_t value)
-// {
-// 	return (value >> 7) | (value << 1);
-// }
+uint8_t CPU::rot_l(uint8_t value)
+{
+	return (value >> 7) | (value << 1);
+}
 
 
 /*
