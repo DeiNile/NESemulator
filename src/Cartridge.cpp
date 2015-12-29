@@ -37,11 +37,21 @@ Cartridge::~Cartridge()
 	}
 }
 
+/*
+ * Retrieve the cartridge's header.
+ *
+ * @return header The header
+ */
 Header Cartridge::get_header()
 {
 	return *header;
 }
 
+/*
+ * Retrieve all the trainer data for the cartridge.
+ *
+ * @return The trainer data
+ */
 std::vector<uint8_t> Cartridge::get_trainer()
 {
 	return trainer_data;
@@ -51,26 +61,51 @@ std::vector<uint8_t> Cartridge::get_trainer()
 	// }
 }
 
+/*
+ * Retrive the program rom from the cartridge.
+ *
+ * @return prg_rom_data The program rom
+ */
 std::vector<uint8_t> Cartridge::get_prg_rom()
 {
 	return prg_rom_data;
 }
 
+/*
+ * Retrives the character rom from the cartridge.
+ *
+ * @return chr_rom_data The cahracter data
+ */
 std::vector<uint8_t> Cartridge::get_chr_rom()
 {
 	return chr_rom_data;
 }
 
+/*
+ * Retrive the program ram from the cartridge.
+ *
+ * @return Program ram
+ */
 std::vector<uint8_t> Cartridge::get_prg_ram()
 {
 	return prg_ram_data;
 }
 
+/*
+ * Retrieve the Playchoice data from the cartridge.
+ *
+ * @return playchoice_data
+ */
 std::vector<uint8_t> Cartridge::get_playchoice()
 {
 	return playchoice_data;
 }
 
+/*
+ * Check if the cartridge has character ROM.
+ *
+ * @return True if character ROM is present
+ */
 bool Cartridge::has_chr_rom()
 {
 	if (header->get_chr_size_8KB() == 0) {
@@ -80,6 +115,9 @@ bool Cartridge::has_chr_rom()
 	}
 }
 
+/*
+ * Reads the trainer from the file and stores it in memory.
+ */
 void Cartridge::load_trainer()
 {
 	if (header->is_trainer_present()) {
@@ -89,53 +127,48 @@ void Cartridge::load_trainer()
 	}
 }
 
+/*
+ * Reads the program data from the cartridge and stores it in memory.
+ */
 void Cartridge::load_prg_rom()
 {
 	int size = header->get_prg_rom_size_16KB() * PRG_ROM_UNITS;
 	if (header != NULL && size > 0) {
-		// if ((prg_rom_data = (uint8_t *)malloc(sizeof(uint8_t) * size)) == NULL) {
-		// 	std::cerr << "Memory allocation failed: PRG ROM" << std::endl;
-		// }
 		prg_rom_data.resize(size);
 		rom.read((char *)&(prg_rom_data[0]), size);
-		// rom.read((char *)prg_rom_data, size);
 	}
 }
 
+/*
+ * Reads the character ROM from the cartrdige and stores it in memory.
+ */
 void Cartridge::load_chr_rom()
 {
 	int size = header->get_chr_size_8KB() * CHR_ROM_UNITS;
 	if (header != NULL && size > 0) {
-		// if ((chr_rom_data = (uint8_t *)malloc(sizeof(uint8_t) * size)) == NULL) {
-		// 	std::cerr << "Memory allocation failed: CHR ROM" << std::endl;
-		// }
 		chr_rom_data.resize(size);
 		rom.read((char *)&(chr_rom_data[0]), size);
-		// rom.read((char *)chr_rom_data, size);
 	}
 }
 
+/*
+ * Reads teh program RAM from the cartridge and stores it in memory.
+ */
 void Cartridge::load_prg_ram()
 {
 	int size = header->get_prg_ram_size_8KB() * PRG_RAM_UNITS;
 	if (header != NULL && size > 0) {
-		// if ((prg_ram_data = (uint8_t *)malloc(sizeof(uint8_t) * size)) == NULL) {
-		// 	std::cerr << "Memory allocation failed: PRG RAM" << std::endl;
-		// }
 		prg_ram_data.resize(size);
 		rom.read((char *)&(prg_ram_data[0]), size);
-		// rom.read((char *)prg_ram_data, size);
 	}
 }
 
+/*
+ * Reads the Playchoice from the cartridge and stores it in memmory.
+ */
 void Cartridge::load_playchoice()
 {
 	if (header != NULL && header->is_playchoice()) {
-		// if ((playchoice_data = (uint8_t *)malloc(sizeof(uint8_t) * 
-		// 		PLAYCHOICE_SIZE)) == NULL) {
-		// 	std::cerr << "Memory allocation failed: PLAYCHOICE" << std::endl;
-		// }
-		// rom.read((char *)playchoice_data, PLAYCHOICE_SIZE);
 		playchoice_data.resize(PLAYCHOICE_SIZE);
 		rom.read((char *)&(playchoice_data[0]), PLAYCHOICE_SIZE);
 	}
