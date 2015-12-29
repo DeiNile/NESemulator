@@ -47,8 +47,8 @@ CPU::CPU(Cartridge *cart, Console *con)
 	memory = new CPU_Memory(cart, console);
 }
 
-// std::vector<uint8_t> CPU::memory(MEM_SIZE);
 
+// Stores the width of an instruction in bytes
 const unsigned char CPU::instruction_length[UINT8_MAX + 1] = {
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
@@ -68,6 +68,7 @@ const unsigned char CPU::instruction_length[UINT8_MAX + 1] = {
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 };
 
+// Stores how many cycles each individual instruction consumes
 const unsigned char CPU::execution_time[UINT8_MAX + 1] = {
 	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
@@ -87,6 +88,7 @@ const unsigned char CPU::execution_time[UINT8_MAX + 1] = {
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 };
 
+// Stores the addressing mode that the associated opcode has
 const unsigned char CPU::opcode_addressing_mode[UINT8_MAX + 1] = {
 	6,  7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,
 	10, 9, 6, 9, 12, 12, 12, 12, 6, 3, 6, 3, 2, 2, 2, 2,
@@ -143,6 +145,13 @@ const string CPU::instruction_names[UINT8_MAX + 1] = {
 
 // Load and store
 
+/*
+ * Stores a value in memory, or an immediate value in the A register.
+ * Z and N flags are set accordingly.
+ *
+ * @param address The address where the value is located, or the value itself
+ * @param read_from_memory Determines if the value is to be read from memory
+ */
 void CPU::lda(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
@@ -154,6 +163,13 @@ void CPU::lda(uint16_t address, bool read_from_memory)
 	set_N_flag(A);
 }
 
+/*
+ * Stores a value in memory, or an immediate value in the X register.
+ * Z and N flags are set accordingly.
+ *
+ * @param address The address where the value is located, or the value itself
+ * @param read_from_memory Determines if the value is to be read from memory
+ */
 void CPU::ldx(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
@@ -165,6 +181,13 @@ void CPU::ldx(uint16_t address, bool read_from_memory)
 	set_N_flag(X);
 }
 
+/*
+ * Stores a value in memory, or an immediate value in the Y register.
+ * Z and N flags are set accordingly.
+ *
+ * @param address The address where the value is located, or the value itself
+ * @param read_from_memory Determines if the value is to be read from memory
+ */
 void CPU::ldy(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
@@ -176,16 +199,31 @@ void CPU::ldy(uint16_t address, bool read_from_memory)
 	set_N_flag(Y);
 }
 
+/*
+ * Stores the value in the A register in memory at the given address.
+ *
+ * @param memory_address Address where the value should be stored
+ */
 void CPU::sta(uint16_t memory_address)
 {
 	memory->write(memory_address, A);
 }
 
+/*
+ * Stores the value in the X register in memory at the given address.
+ *
+ * @param memory_address Address where the value should be stored
+ */
 void CPU::stx(uint16_t memory_address)
 {
 	memory->write(memory_address, X);
 }
 
+/*
+ * Stores the value in the Y register in memory at the given address.
+ *
+ * @param memory_address Address where the value should be stored
+ */
 void CPU::sty(uint16_t memory_address)
 {
 	memory->write(memory_address, Y);
@@ -193,6 +231,21 @@ void CPU::sty(uint16_t memory_address)
 
 // Arithmetic
 
+/*
+ * Performs addition with the value stored in the A register, and another 
+ * operand. Uses carry bits to essentially have 9-bit arithmetic. Overflow
+ * is stored in V and C flags. N and Z flags are set accordingly to the sum.
+ *
+ * Signed overflow is indicated in the V flag.
+ * Unsigned overflow is indicated in the C flag.
+ *
+ * The formulas can be found here:
+ * http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+ *
+ * @param address Address of the operand, or the operand value itself
+ * @param read_from_memory Determines if @address is a literal value, 
+ *	or an address
+ */
 void CPU::adc(uint16_t address, bool read_from_memory)
 {
 	uint8_t prev_A = A;
@@ -203,12 +256,14 @@ void CPU::adc(uint16_t address, bool read_from_memory)
 		val = address;
 	}
 	uint8_t sum = val + prev_A + C_flag;
+	// Check for unsigned overflow
 	if ((val + prev_A + C_flag) > UINT8_MAX) {
 		sec();
 	} else {
 		clc();
 	}
 
+	// Check for signed overflow
 	if ((prev_A ^ sum) & (val ^ sum) & BYTE_SIGN_BIT_SET_MASK) {
 		V_flag = true;
 	} else {
@@ -219,6 +274,21 @@ void CPU::adc(uint16_t address, bool read_from_memory)
 	set_N_flag(A);
 }
 
+/*
+ * Performs subtraction with the value stored in the A register, and another 
+ * operand. Because the flags behave identically when subtracting compared 
+ * to addition, subtraction can be implemented with adc. This requires
+ * the operand to be in one's complement. We can do this because subtracting
+ * 5 from a value is the same as adding -5 to a value.
+ *
+ * Thorough explanations can be found here:
+ * http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+ * http://forums.nesdev.com/viewtopic.php?t=8703
+ *
+ * @param address Address of the operand, or the operand value itself
+ * @param read_from_memory Determines if @address is a literal value, 
+ *	or an address
+ */
 void CPU::sbc(uint16_t address, bool read_from_memory)
 {
 	uint8_t val;
@@ -232,7 +302,12 @@ void CPU::sbc(uint16_t address, bool read_from_memory)
 
 // Increment and decrement
 
-
+/*
+ * Increments the value in in memory.
+ * Z and N flags are set accordingly.
+ *
+ * @param address The address of the value to be incremented
+ */
 void CPU::inc(uint16_t address)
 {
 	int value = (memory->read(address) + 1) & UINT8_MAX;
@@ -241,6 +316,10 @@ void CPU::inc(uint16_t address)
 	set_N_flag(value);
 }
 
+/*
+ * Increment the value stored in the X register.
+ * Z and N flags are set accordingly.
+ */
 void CPU::inx()
 {
 	X++;
@@ -248,6 +327,10 @@ void CPU::inx()
 	set_N_flag(X);
 }
 
+/*
+ * Increment the value stored in the Y register.
+ * Z and N flags are set accordingly.
+ */
 void CPU::iny()
 {
 	Y++;
@@ -255,6 +338,12 @@ void CPU::iny()
 	set_N_flag(Y);
 }
 
+/*
+ * Decrements the value in in memory.
+ * Z and N flags are set accordingly.
+ *
+ * @param address The address of the value to be decremented
+ */
 void CPU::dec(uint16_t address)
 {
 
@@ -264,6 +353,10 @@ void CPU::dec(uint16_t address)
 	set_N_flag(value);
 }
 
+/*
+ * Decrement the value stored in the X register.
+ * Z and N flags are set accordingly.
+ */
 void CPU::dex()
 {
 	X--;
@@ -271,6 +364,10 @@ void CPU::dex()
 	set_N_flag(X);
 }
 
+/*
+ * Decrement the value stored in the Y register.
+ * Z and N flags are set accordingly.
+ */
 void CPU::dey()
 {
 	Y--;
@@ -280,6 +377,14 @@ void CPU::dey()
 
 // Logical
 
+/*
+ * Performs a logical AND with the provided operand and the A register.
+ * The oeprand is either givende immediately, or found at the address in memory.
+ * Z and N flags are set accordingly.
+ *
+ * @param address Address of the operand in memory, or its literal value
+ * @aparam read_from_memory Determines if @address is an operand or address
+ */
 void CPU::_and(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
@@ -291,6 +396,14 @@ void CPU::_and(uint16_t address, bool read_from_memory)
 	set_N_flag(A);
 }
 
+/*
+ * Performs a logical OR with the provided operand and the A register.
+ * The operand is either givende immediately, or found at the address in memory.
+ * Z and N flags are set accordingly.
+ *
+ * @param address Address of the operand in memory, or its literal value
+ * @aparam read_from_memory Determines if @address is an operand or address
+ */
 void CPU::ora(uint16_t address, bool read_from_memory) 
 {
 	if (read_from_memory) {
@@ -302,6 +415,14 @@ void CPU::ora(uint16_t address, bool read_from_memory)
 	set_N_flag(A);
 }
 
+/*
+ * Performs a logical XOR with the provided operand and the A register.
+ * The operand is either givende immediately, or found at the address in memory.
+ * Z and N flags are set accordingly.
+ *
+ * @param address Address of the operand in memory, or its literal value
+ * @aparam read_from_memory Determines if @address is an operand or address
+ */
 void CPU::eor(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
@@ -315,11 +436,24 @@ void CPU::eor(uint16_t address, bool read_from_memory)
 
 // Jump, branch, compare and test
 
+/*
+ * Changes the value of the program counter, causing the program to jump.
+ *
+ * @param address The address of the next instruction to be executed
+ */
 void CPU::jmp(uint16_t address)
 {
 	PC = address;
 }
 
+/*
+ * Compares the A register with the provided operand. The C flag is set to
+ * denote that A is larger or qeual than the operand.
+ * N and Z flags are set accoringly.
+ *
+ * @param address The address of the operand, or the operand itself
+ * @param read_from_memory Determines if @address is an operand or an address
+ */
 void CPU::cmp(uint16_t address, bool read_from_memory)
 {
 	uint8_t mem;
@@ -338,6 +472,14 @@ void CPU::cmp(uint16_t address, bool read_from_memory)
 	set_N_flag(val);
 }
 
+/*
+ * Compares the X register with the provided operand. The C flag is set to
+ * denote that X is larger or qeual than the operand.
+ * N and Z flags are set accoringly.
+ *
+ * @param address The address of the operand, or the operand itself
+ * @param read_from_memory Determines if @address is an operand or an address
+ */
 void CPU::cpx(uint16_t address, bool read_from_memory) 
 {
 	uint8_t mem; 
@@ -356,6 +498,14 @@ void CPU::cpx(uint16_t address, bool read_from_memory)
 	set_N_flag(val);
 }
 
+/*
+ * Compares the Y register with the provided operand. The C flag is set to
+ * denote that Y is larger or qeual than the operand.
+ * N and Z flags are set accoringly.
+ *
+ * @param address The address of the operand, or the operand itself
+ * @param read_from_memory Determines if @address is an operand or an address
+ */
 void CPU::cpy(uint16_t address, bool read_from_memory)
 {
 	uint8_t mem;
@@ -374,6 +524,11 @@ void CPU::cpy(uint16_t address, bool read_from_memory)
 	set_N_flag(val);
 }
 
+/*
+ * Branches if the C flag is clear.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::bcc(int8_t displacement)
 {
 	if (!C_flag) {
@@ -383,6 +538,11 @@ void CPU::bcc(int8_t displacement)
 	}
 }
 
+/*
+ * Branches if the C flag is set.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::bcs(int8_t displacement)
 {
 	if (C_flag) {
@@ -392,6 +552,11 @@ void CPU::bcs(int8_t displacement)
 	}
 }
 
+/*
+ * Branches if the Z flag is set.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::beq(int8_t displacement) 
 {
 	if (Z_flag) {
@@ -401,6 +566,11 @@ void CPU::beq(int8_t displacement)
 	}
 }
 
+/*
+ * Branches if the Z flag is clear.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::bne(int8_t displacement)
 {
 	if (!Z_flag) {
@@ -410,6 +580,11 @@ void CPU::bne(int8_t displacement)
 	}
 }
 
+/*
+ * Branches if the N flag is set.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::bmi(int8_t displacement)
 {
 	if (N_flag) {
@@ -419,6 +594,11 @@ void CPU::bmi(int8_t displacement)
 	}
 }
 
+/*
+ * Branches if the N flag is clear.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::bpl(int8_t displacement)
 {
 	if (!N_flag) {
@@ -428,6 +608,11 @@ void CPU::bpl(int8_t displacement)
 	}
 }
 
+/*
+ * Branches if the V flag is set.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::bvs(int8_t displacement) 
 {
 	if (V_flag) {
@@ -437,6 +622,11 @@ void CPU::bvs(int8_t displacement)
 	}
 }
 
+/*
+ * Branches if the V flag is clear.
+ *
+ * @param displacement The value that we want to branch to
+ */
 void CPU::bvc(int8_t displacement) 
 {
 	if (!V_flag) {
@@ -446,6 +636,15 @@ void CPU::bvc(int8_t displacement)
 	}
 }
 
+/*
+ * Tests the bits in the A register with the value stored in memory.
+ * This function does not change any of the values of the registers, or
+ * values in memory, only the flags.
+ *
+ * Bits 6 and 7 if the memory value is moved to the V and N flags, respectively.
+ *
+ * @param address The address of the value we are comparing with
+ */
 void CPU::bit(uint16_t address)
 {
 	uint8_t mem_val = memory->read(address);
@@ -457,6 +656,14 @@ void CPU::bit(uint16_t address)
 
 // Shift and rotate
 
+/*
+ * Shift either the A register, or a memory value one bit to the left.
+ * Carry bit is put in the C flag.
+ *
+ * @param address The address of the value in memory
+ * @param read_from_memory Determines if we are shifting the A register, or a
+ *	value in memory
+ */
 void CPU::asl(uint16_t address, bool read_from_memory)
 {
 	if (read_from_memory) {
@@ -483,6 +690,14 @@ void CPU::asl(uint16_t address, bool read_from_memory)
 	}
 }
 
+/*
+ * Shifts either a value in memory, or the A register, on bit to the right.
+ * The least significant bit - carry bit - is move to the C flag.
+ *
+ * @param address The address of the value in memory
+ * @param read_from_memory Determines if we are shifting the A register, or a
+ *	value in memory
+ */
 void CPU::lsr(uint16_t address, bool read_from_memory) 
 {
 	if (read_from_memory) {
@@ -508,6 +723,14 @@ void CPU::lsr(uint16_t address, bool read_from_memory)
 	}
 }
 
+/*
+ * Rotates either a value in memory, or the A register, one bit to the left.
+ * The bit that is rotated in comes from the C flag.
+ * 
+ * @param address The address of the value in memory
+ * @param read_from_memory Determines if we are shifting the A register, or a
+ *	value in memory
+ */
 void CPU::rol(uint16_t address, bool read_from_memory)
 {
 	bool new_carry;
@@ -529,6 +752,14 @@ void CPU::rol(uint16_t address, bool read_from_memory)
 	}
 }
 
+/*
+ * Rotates either a value in memory, or the A register, one bit to the right.
+ * The bit that is rotated in comes from the C flag.
+ * 
+ * @param address The address of the value in memory
+ * @param read_from_memory Determines if we are shifting the A register, or a
+ *	value in memory
+ */
 void CPU::ror(uint16_t address, bool read_from_memory)
 {
 	uint8_t new_val;
@@ -552,6 +783,9 @@ void CPU::ror(uint16_t address, bool read_from_memory)
 
 // Transfer
 
+/*
+ * Moves the A register to the X register
+ */
 void CPU::tax()
 {
 	X = A;
@@ -559,6 +793,9 @@ void CPU::tax()
 	set_N_flag(X);
 }
 
+/*
+ * Moves the A register to the Y register
+ */
 void CPU::tay()
 {
 	Y = A;
@@ -566,6 +803,9 @@ void CPU::tay()
 	set_N_flag(Y);
 }
 
+/*
+ * Moves the X regsiter to the A register.
+ */
 void CPU::txa()
 {
 	A = X;
@@ -573,6 +813,9 @@ void CPU::txa()
 	set_N_flag(A);
 }
 
+/*
+ * Moves the Y register to the A register.
+ */
 void CPU::tya()
 {
 	A = Y;
@@ -582,6 +825,9 @@ void CPU::tya()
 
 // Stack
 
+/*
+ * Moves the stack pointer to the X register.
+ */
 void CPU::tsx()
 {
 	X = SP;
@@ -589,28 +835,45 @@ void CPU::tsx()
 	set_N_flag(X);
 }
 
+/*
+ * Replaces the stack pointer with the value in the X register.
+ */
 void CPU::txs()
 {
 	SP = X;
 }
 
+/*
+ * Pushes the A register onto the stack.
+ */
 void CPU::pha()
 {
 	push(A);
 }
 
+/*
+ * Pushes the status register onto the stack.
+ * Bit 4 is always set on the stack.
+ */
 void CPU::php()
 {
+	// Move all flags into the P value
 	update_P();
 	push(P | B_BIT);
 }
 
+/*
+ * Pull a value from the stack and assign it to the status register.
+ */
 void CPU::plp()
 {
 	// Bit 5 is always set, (bit 4 is always unset ?)
 	set_P_flags((pull() | UNUSED_BIT) & ALL_P_FLAGS_SET_B_FLAG_UNSET);
 }
 
+/*
+ * Pull a value from the stack and assign it to the A register.
+ */
 void CPU::pla()
 {
 	A = (pull());
@@ -620,19 +883,37 @@ void CPU::pla()
 
 // Subroutine
 
+/*
+ * Jump to a subroutine.
+ * This involves storing the previous program counter on the stack, and then
+ * changing the program counter.
+ *
+ * @param address The new value for the program counter
+ */
 void CPU::jsr(uint16_t address)
 {
 	push_address(PC - 1);
 	PC = address;
 }
 
+/*
+ * Return from a subroutine.
+ * Pull a previously stored program counter from the stack, and re-assign it
+ * to the program counter.
+ */
 void CPU::rts()
 {
 	PC = pull_address() + 1;
 }
 
+/*
+ * Return from an interrupt.
+ * Restore the status register and the program counter from before the 
+ * interrupt and continue execution.
+ */
 void CPU::rti()
 {
+	// Bit 5 is always set in the status register
 	P = pull() | UNUSED_BIT;
 	PC = pull_address();
 	set_P_flags(P);
@@ -641,36 +922,57 @@ void CPU::rti()
 
 // Set and reset
 
+/*
+ * Clear the C flag.
+ */
 void CPU::clc()
 {
 	C_flag = false;
 }
 
+/*
+ * Clear the D flag.
+ */
 void CPU::cld()
 {
 	D_flag = false;
 }
 
+/*
+ * Clear the I flag.
+ */
 void CPU::cli()
 {
 	I_flag = false;
 }
 
+/*
+ * Clear the V flag.
+ */
 void CPU::clv()
 {
 	V_flag = false;
 }
 
+/*
+ * Set the C flag.
+ */
 void CPU::sec()
 {
 	C_flag = true;
 }
 
+/*
+ * Set the D flag.
+ */
 void CPU::sed()
 {
 	D_flag = true;
 }
 
+/*
+ * Set the I flag.
+ */
 void CPU::sei()
 {
 	I_flag = true;
@@ -680,10 +982,17 @@ void CPU::sei()
 
 // NOP and BRK
 
+/*
+ * No operation.
+ */
 void CPU::nop()
 {
 }
 
+/*
+ * Simulates and interrupt by pushing the program counter and the status 
+ * register to the stack, and then executing the interrupt handler routine.
+ */
 void CPU::brk()
 {
 	push_address(PC);
@@ -789,6 +1098,15 @@ uint16_t CPU::calculate_address(int opcode, uint8_t high, uint8_t low)
 	return ret;
 }
 
+/*
+ * Addresses are incorrectly calculated when the lower byte of the address is of
+ * the form 0xFF. This bug does not carry the overflow from the 0xFF over to
+ * 0x00 like it should. 
+ * This function should only be called with indirectly addressed JMP 
+ * instructions.
+ *
+ * @param address The source address for the destination address
+ */
 uint16_t CPU::calculate_address_buggy(uint16_t address) {
 	uint16_t ret;
 	if ((uint8_t)address == UINT8_MAX) {
@@ -801,13 +1119,23 @@ uint16_t CPU::calculate_address_buggy(uint16_t address) {
 	return ret;
 }
 
-
+/*
+ * Reads a value from memory.
+ *
+ * @param address The address we want to read from
+ * @return The value stored in memory
+ */
 uint8_t CPU::read_memory(uint16_t address)
 {
 	return memory->read(address);
 }
 
-
+/*
+ * Write a value to memory.
+ *
+ * @param address The address where we want to store @value
+ * @param value The value that we want to store in memory
+ */
 void CPU::write_memory(uint16_t address, uint8_t value)
 {
 	memory->write(address, value);
@@ -837,6 +1165,11 @@ void CPU::load_prg_bank_upper(std::vector<uint8_t> &v)
 	}
 }
 
+/*
+ * Sets the Z flag if the value is 0, clears it otherwise.
+ *
+ * @param value The value that we are checking
+ */
 void CPU::set_Z_flag(uint8_t value)
 {
 	if (value == 0) {
@@ -846,6 +1179,12 @@ void CPU::set_Z_flag(uint8_t value)
 	}
 }
 
+/*
+ * The N flag is set if the most significant bit is set. It is cleared 
+ * otherwise.
+ *
+ * @param value The value we are checking
+ */
 void CPU::set_N_flag(uint8_t value)
 {
 	if (value & BYTE_SIGN_BIT_SET_MASK) {
@@ -855,6 +1194,11 @@ void CPU::set_N_flag(uint8_t value)
 	}
 }
 
+/*
+ * Assigns the status register to the new value, and sets the flags accordingly
+ *
+ * @param value The new value for the status register
+ */
 void CPU::set_P_flags(uint8_t value)
 {
 	P = value;
@@ -868,7 +1212,6 @@ void CPU::set_P_flags(uint8_t value)
 	value >>= 1;
 	B_flag = (value & 1) ? true : false;
 	value >>= 1;
-	// unused_flag = (value & 1) ? true : false;
 	unused_flag = true;
 	value >>= 1;
 	V_flag = (value & 1) ? true : false;
@@ -876,11 +1219,21 @@ void CPU::set_P_flags(uint8_t value)
 	N_flag = (value & 1) ? true : false;
 }
 
+/*
+ * Pushes the given value onto the stack.
+ *
+ * @param val The value that is to be pushed on the stack
+ */
 void CPU::push(uint8_t val)
 {
     memory->write(STACK_START + (SP--), val);
 }
 
+/*
+ * Pushes an address onto the stack. The high byte is pushed before the low.
+ *
+ * @param address The address that is to be pushed onto the stack.
+ */
 void CPU::push_address(uint16_t address)
 {
 	uint8_t low_byte = address;
@@ -889,11 +1242,22 @@ void CPU::push_address(uint16_t address)
 	push(low_byte);
 }
 
+/*
+ * Pulls a value from the stack.
+ *
+ * @return The value on top of the stack.
+ */
 uint8_t CPU::pull()
 {
     return memory->read(STACK_START + (++SP));
 }
 
+/*
+ * Pulls an address from the stack. The low byte of the address is pulled 
+ * before the high byte.
+ *
+ * @return The address that was stored on the stack.
+ */
 uint16_t CPU::pull_address()
 {
 	uint8_t low_byte = pull();
@@ -904,6 +1268,9 @@ uint16_t CPU::pull_address()
 	return address;
 }
 
+/*
+ * Reflects all the value of the status flags in the status register byte.
+ */
 void CPU::update_P()
 {
 	P = 0;
@@ -937,19 +1304,27 @@ void CPU::print_state()
 }
 
 
-inline uint8_t CPU::rot_r(uint8_t value)
-{
-	return (value << 7) | (value >> 1);
-}
+// inline uint8_t CPU::rot_r(uint8_t value)
+// {
+// 	return (value << 7) | (value >> 1);
+// }
 
-inline uint8_t CPU::rot_l(uint8_t value)
-{
-	return (value >> 7) | (value << 1);
-}
+// inline uint8_t CPU::rot_l(uint8_t value)
+// {
+// 	return (value >> 7) | (value << 1);
+// }
 
 
 /*
  * UNFINISHED
+ *
+ * Fetches an instruction, along with any operands, determines the addressing 
+ * mode and thus the effective address to be used, and executes the instruction.
+ * This function does not emulate a cycle perfect instruction. This may have to
+ * be changed depending on PPU emulation.
+ *
+ * 
+ * The Function also writes the values of the opcode and operands to a log file.
  */
 void CPU::fetch_and_execute() 
 {
@@ -963,20 +1338,20 @@ void CPU::fetch_and_execute()
 	uint8_t high = 0;
 	str << boost::format("  %02X ") % (int)opcode;
 
+	// Instruction has only 1 operand
 	if (instruction_length[opcode] == 2) {
 		low = memory->read(PC++);
 		str << boost::format("%02X%5s") % (int)low % "";
+	// Instruction has 2 operands
 	} else if (instruction_length[opcode] == 3){
 		low = memory->read(PC++);
 		high = memory->read(PC++);
 		str << boost::format("%02X %02X  ") % (int)low % (int)high;
+	// No operands for instruction
 	} else {
 		str << boost::format("%7s") % "";
 	}
 	uint16_t address = calculate_address(opcode, high, low);
-	
-	// final_address = address;
-	// base_address = ((high << BYTE_LENGTH) | low);
 	
 	str << boost::format("%s\t") % instruction_names[opcode];
 	f << str.str();
@@ -986,6 +1361,7 @@ void CPU::fetch_and_execute()
 	execute(opcode, address);
 	clock_cycle += execution_time[opcode];
 	update_P();
+	// Hard coded for NESTEST 
 	if (PC == 0xC66E || linenum == 8992) {
 		f.close();
 		exit(0);
@@ -993,12 +1369,23 @@ void CPU::fetch_and_execute()
 	linenum++;
 }
 
+/*
+ * Determines if two address are from different pages, i.e. if the high byte
+ * of the addresses differ.
+ *
+ * @param address_1 The original address
+ * @param address_2 The current address being used
+ * @return True if the high byte of the addresses differ
+ */
 bool CPU::pages_differ(uint16_t address_1, uint16_t address_2)
 {
 	const uint16_t high_mask = ((UINT8_MAX << BYTE_LENGTH) | 0);
 	return (address_1 & high_mask) != (address_2 & high_mask);
 }
 
+/*
+ * Increments the clock if an addresses crossed a page.
+ */
 void CPU::increment_on_page_crossing()
 {
 	if (pages_differ(final_address, base_address)) {
@@ -1006,6 +1393,9 @@ void CPU::increment_on_page_crossing()
 	}
 }
 
+/*
+ * Handles the 3 different types of interrupts that the NES has.
+ */
 void CPU::handle_interrupts()
 {
 	// check for RESET here
@@ -1020,6 +1410,12 @@ void CPU::handle_interrupts()
 	}
 }
 
+/*
+ * The NMI interrupt routine. 
+ * Pushes the program counter and the status register onto the stack,
+ * and then retrieves the NMI vector and continues execution from this 
+ * point.
+ */
 void CPU::nmi()
 {
 	push_address(PC);
@@ -1031,6 +1427,11 @@ void CPU::nmi()
 	// }
 }
 
+/*
+ * The RESET interrupt routine.
+ * Changes the program counter to that of the reset vector, and continues
+ * execution.
+ */
 void CPU::reset()
 {
 	PC = memory->read_address(RESET_VECTOR);
@@ -1038,7 +1439,12 @@ void CPU::reset()
 	clock_cycle += 7;
 }
 
-
+/*
+ * The Interrupt request - IRQ - routine.
+ * Pushes the status program counter and the status register onto the stack.
+ * The I flag is set ot indicate that an IRQ has happened.
+ * The program continues to execute from the address stored at the IRQ vector.
+ */
 void CPU::irq()
 {
 	push_address(PC);
